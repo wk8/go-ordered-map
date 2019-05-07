@@ -1,3 +1,10 @@
+// Package orderedmap implements an ordered map, i.e. a map that also keeps track of
+// the order in which keys were inserted.
+//
+// All operations are constant-time.
+//
+// Github repo: https://github.com/wk8/go-ordered-map
+//
 package orderedmap
 
 import (
@@ -25,7 +32,7 @@ func New() *OrderedMap {
 }
 
 // Get looks for the given key, and returns the value associated with it,
-// or nil if not found. The boolean it returns says whether the key was present in the map.
+// or nil if not found. The boolean it returns says whether the key is present in the map.
 func (om *OrderedMap) Get(key interface{}) (interface{}, bool) {
 	if pair, present := om.pairs[key]; present {
 		return pair.Value, present
