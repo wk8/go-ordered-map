@@ -32,6 +32,14 @@ func TestBasicFeatures(t *testing.T) {
 		assert.True(t, present)
 	}
 
+	// get pairs of what we just set
+	for i := 0; i < n; i++ {
+		pair := om.GetPair(i)
+
+		assert.NotNil(t, pair)
+		assert.Equal(t, 2*i, pair.Value)
+	}
+
 	// forward iteration
 	i := 0
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
@@ -45,6 +53,14 @@ func TestBasicFeatures(t *testing.T) {
 		assert.Equal(t, i, pair.Key)
 		assert.Equal(t, 2*i, pair.Value)
 		i--
+	}
+
+	// forward iteration starting from known key
+	i = 42
+	for pair := om.GetPair(i); pair != nil; pair = pair.Next() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 2*i, pair.Value)
+		i++
 	}
 
 	// double values for pairs with even keys
