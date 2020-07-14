@@ -40,6 +40,13 @@ func (om *OrderedMap) Get(key interface{}) (interface{}, bool) {
 	return nil, false
 }
 
+// GetPair looks for the given key, and returns the pair associated with it,
+// or nil if not found. The Pair struct can then be used to iterate over the ordered map
+// from that point, either forward or backward.
+func (om *OrderedMap) GetPair(key interface{}) *Pair {
+	return om.pairs[key]
+}
+
 // Set sets the key-value pair, and returns what `Get` would have returned
 // on that key prior to the call to `Set`.
 func (om *OrderedMap) Set(key interface{}, value interface{}) (interface{}, bool) {
