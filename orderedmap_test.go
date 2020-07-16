@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -259,16 +258,6 @@ func assertLenEqual(t *testing.T, om *OrderedMap, expectedLen int) {
 
 	// also check the list length, for good measure
 	assert.Equal(t, expectedLen, om.list.Len())
-}
-
-func shuffle(a []interface{}) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := len(a) - 1; i > 0; i-- {
-		j := r.Int() % (i + 1)
-		tmp := a[j]
-		a[j] = a[i]
-		a[i] = tmp
-	}
 }
 
 func randomHexString(t *testing.T, length int) string {
