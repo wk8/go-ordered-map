@@ -273,3 +273,45 @@ func randomHexString(t *testing.T, length int) string {
 
 	return hex.EncodeToString(randBytes)
 }
+
+func TestMove(t *testing.T) {
+	om := New()
+	om.Set("1", "bar")
+	om.Set(2, 28)
+	om.Set(3, 100)
+	om.Set("4", "baz")
+	om.Set(5, "28")
+	om.Set(6, "100")
+	om.Set("7", "baz")
+	om.Set("8", "baz")
+
+	var err error
+
+	err = om.MoveAfter(2, 3)
+	assert.Nil(t, err)
+	assertOrderedPairsEqual(t, om,
+		[]interface{}{"1", 3, 2, "4", 5, 6, "7", "8"},
+		[]interface{}{"bar", 100, 28, "baz", "28", "100", "baz", "baz"})
+
+	err = om.MoveBefore(6, "4")
+	assert.Nil(t, err)
+	assertOrderedPairsEqual(t, om,
+		[]interface{}{"1", 3, 2, 6, "4", 5, "7", "8"},
+		[]interface{}{"bar", 100, 28, "100", "baz", "28", "baz", "baz"})
+
+	err = om.MoveToBack(3)
+	assert.Nil(t, err)
+	assertOrderedPairsEqual(t, om,
+		[]interface{}{"1", 2, 6, "4", 5, "7", "8", 3},
+		[]interface{}{"bar", 28, "100", "baz", "28", "baz", "baz", 100})
+
+	err = om.MoveToFront(5)
+	assert.Nil(t, err)
+	assertOrderedPairsEqual(t, om,
+		[]interface{}{5, "1", 2, 6, "4", "7", "8", 3},
+		[]interface{}{"28", "bar", 28, "100", "baz", "baz", "baz", 100})
+
+	err = om.MoveToFront(100)
+	assert.NotEqual(t, err, nil)
+
+}
