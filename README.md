@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/wk8/go-ordered-map.svg?branch=master)](https://travis-ci.org/wk8/go-ordered-map)
+[![Build Status](https://circleci.com/gh/wk8/go-ordered-map.svg?style=svg)](https://app.circleci.com/pipelines/github/wk8/go-ordered-map)
 
 # Goland Ordered Maps
 
