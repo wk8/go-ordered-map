@@ -313,5 +313,4 @@ func TestMove(t *testing.T) {
 
 	err = om.MoveToFront(100)
 	assert.NotEqual(t, err, nil)
-
 }

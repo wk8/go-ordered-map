@@ -40,6 +40,8 @@ func (om *OrderedMap) Get(key interface{}) (interface{}, bool) {
 	}
 	return nil, false
 }
+
+// Load is an alias for Get, mostly to present an API similar to `sync.Map`'s.
 func (om *OrderedMap) Load(key interface{}) (interface{}, bool) {
 	return om.Get(key)
 }
@@ -69,6 +71,8 @@ func (om *OrderedMap) Set(key interface{}, value interface{}) (interface{}, bool
 
 	return nil, false
 }
+
+// Store is an alias for Set, mostly to present an API similar to `sync.Map`'s.
 func (om *OrderedMap) Store(key interface{}, value interface{}) (interface{}, bool) {
 	return om.Set(key, value)
 }
@@ -120,53 +124,69 @@ func listElementToPair(element *list.Element) *Pair {
 	return element.Value.(*Pair)
 }
 
-func (om *OrderedMap) MoveAfter(key interface{}, mark_key interface{}) error {
-	var e, mark *list.Element
-	if pair, present := om.pairs[key]; present {
-		e = pair.element
-	} else {
-		return fmt.Errorf("error: key %v not found", key)
+// KeyNotFoundError may be returned by functions in this package when they're called with keys that are not present in the map.
+type KeyNotFoundError struct {
+	MissingKey interface{}
+}
+
+var _ error = &KeyNotFoundError{}
+
+func (e *KeyNotFoundError) Error() string {
+	return fmt.Sprintf("missing key: %v", e.MissingKey)
+}
+
+// MoveAfter moves the value associated with key to its new position after the one associated with markKey.
+// Returns an error iff key or markKey are not present in the map.
+func (om *OrderedMap) MoveAfter(key, markKey interface{}) error {
+	elements, err := om.getElements(key, markKey)
+	if err != nil {
+		return err
 	}
-	if pair, present := om.pairs[mark_key]; present {
-		mark = pair.element
-	} else {
-		return fmt.Errorf("error: mark_key %v not found", mark_key)
-	}
-	om.list.MoveAfter(e, mark)
+	om.list.MoveAfter(elements[0], elements[1])
 	return nil
 }
-func (om *OrderedMap) MoveBefore(key interface{}, mark_key interface{}) error {
-	var e, mark *list.Element
-	if pair, present := om.pairs[key]; present {
-		e = pair.element
-	} else {
-		return fmt.Errorf("error: key %v not found", key)
+
+// MoveBefore moves the value associated with key to its new position before the one associated with markKey.
+// Returns an error iff key or markKey are not present in the map.
+func (om *OrderedMap) MoveBefore(key, markKey interface{}) error {
+	elements, err := om.getElements(key, markKey)
+	if err != nil {
+		return err
 	}
-	if pair, present := om.pairs[mark_key]; present {
-		mark = pair.element
-	} else {
-		return fmt.Errorf("error: mark_key %v not found", mark_key)
-	}
-	om.list.MoveBefore(e, mark)
+	om.list.MoveBefore(elements[0], elements[1])
 	return nil
 }
+
+func (om *OrderedMap) getElements(keys ...interface{}) ([]*list.Element, error) {
+	elements := make([]*list.Element, len(keys))
+	for i, k := range keys {
+		pair, present := om.pairs[k]
+		if !present {
+			return nil, &KeyNotFoundError{k}
+		}
+		elements[i] = pair.element
+	}
+	return elements, nil
+}
+
+// MoveToBack moves the value associated with key to the back of the ordered map.
+// Returns an error iff key is not present in the map.
 func (om *OrderedMap) MoveToBack(key interface{}) error {
-	var e *list.Element
-	if pair, present := om.pairs[key]; present {
-		e = pair.element
-	} else {
-		return fmt.Errorf("error: key %v not found", key)
+	pair, present := om.pairs[key]
+	if !present {
+		return &KeyNotFoundError{key}
 	}
-	om.list.MoveToBack(e)
+	om.list.MoveToBack(pair.element)
 	return nil
 }
+
+// MoveToFront moves the value associated with key to the front of the ordered map.
+// Returns an error iff key is not present in the map.
 func (om *OrderedMap) MoveToFront(key interface{}) error {
-	var e *list.Element
-	if pair, present := om.pairs[key]; present {
-		e = pair.element
-	} else {
-		return fmt.Errorf("error: key %v not found", key)
+	pair, present := om.pairs[key]
+	if !present {
+		return &KeyNotFoundError{key}
 	}
-	om.list.MoveToFront(e)
+	om.list.MoveToFront(pair.element)
 	return nil
 }
