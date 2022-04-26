@@ -1,0 +1,30 @@
+version: 2
+
+jobs:
+  test:
+    parameters:
+      golang-version:
+        type: string
+    docker:
+      - image: cimg/go:<< parameters.golang-version >>
+        environment:
+          # TODO: remove when we drop support for go < 1.13
+          GO111MODULE: on
+    steps:
+      - run: make test
+
+workflows:
+  test-workflow:
+    jobs:
+      - test:
+          matrix:
+            parameters:
+              golang-version:
+                - 1.11
+                - 1.12
+                - 1.13
+                - 1.14
+                - 1.15
+                - 1.16
+                - 1.17
+                - 1.18
