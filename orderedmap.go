@@ -124,7 +124,8 @@ func listElementToPair(element *list.Element) *Pair {
 	return element.Value.(*Pair)
 }
 
-// KeyNotFoundError may be returned by functions in this package when they're called with keys that are not present in the map.
+// KeyNotFoundError may be returned by functions in this package when they're called with keys that are not present
+// in the map.
 type KeyNotFoundError struct {
 	MissingKey interface{}
 }

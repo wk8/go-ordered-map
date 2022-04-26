@@ -18,6 +18,10 @@ go get -u github.com/wk8/go-ordered-map
 
 Or use your favorite golang vendoring tool!
 
+## Supported go versions
+
+All go versions >= 1.13 are supported. There's no reason for older versions to not also work, but they're not part of the build matrix.
+
 ## Documentation
 
 [The full documentation is available on godoc.org](https://godoc.org/github.com/wk8/go-ordered-map).
