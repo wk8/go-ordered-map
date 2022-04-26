@@ -9,6 +9,7 @@ package orderedmap
 
 import (
 	"container/list"
+	"fmt"
 )
 
 type Pair struct {
@@ -39,6 +40,9 @@ func (om *OrderedMap) Get(key interface{}) (interface{}, bool) {
 	}
 	return nil, false
 }
+func (om *OrderedMap) Load(key interface{}) (interface{}, bool) {
+	return om.Get(key)
+}
 
 // GetPair looks for the given key, and returns the pair associated with it,
 // or nil if not found. The Pair struct can then be used to iterate over the ordered map
@@ -65,6 +69,9 @@ func (om *OrderedMap) Set(key interface{}, value interface{}) (interface{}, bool
 
 	return nil, false
 }
+func (om *OrderedMap) Store(key interface{}, value interface{}) (interface{}, bool) {
+	return om.Set(key, value)
+}
 
 // Delete removes the key-value pair, and returns what `Get` would have returned
 // on that key prior to the call to `Delete`.
@@ -74,7 +81,6 @@ func (om *OrderedMap) Delete(key interface{}) (interface{}, bool) {
 		delete(om.pairs, key)
 		return pair.Value, true
 	}
-
 	return nil, false
 }
 
@@ -112,4 +118,55 @@ func listElementToPair(element *list.Element) *Pair {
 		return nil
 	}
 	return element.Value.(*Pair)
+}
+
+func (om *OrderedMap) MoveAfter(key interface{}, mark_key interface{}) error {
+	var e, mark *list.Element
+	if pair, present := om.pairs[key]; present {
+		e = pair.element
+	} else {
+		return fmt.Errorf("error: key %v not found", key)
+	}
+	if pair, present := om.pairs[mark_key]; present {
+		mark = pair.element
+	} else {
+		return fmt.Errorf("error: mark_key %v not found", mark_key)
+	}
+	om.list.MoveAfter(e, mark)
+	return nil
+}
+func (om *OrderedMap) MoveBefore(key interface{}, mark_key interface{}) error {
+	var e, mark *list.Element
+	if pair, present := om.pairs[key]; present {
+		e = pair.element
+	} else {
+		return fmt.Errorf("error: key %v not found", key)
+	}
+	if pair, present := om.pairs[mark_key]; present {
+		mark = pair.element
+	} else {
+		return fmt.Errorf("error: mark_key %v not found", mark_key)
+	}
+	om.list.MoveBefore(e, mark)
+	return nil
+}
+func (om *OrderedMap) MoveToBack(key interface{}) error {
+	var e *list.Element
+	if pair, present := om.pairs[key]; present {
+		e = pair.element
+	} else {
+		return fmt.Errorf("error: key %v not found", key)
+	}
+	om.list.MoveToBack(e)
+	return nil
+}
+func (om *OrderedMap) MoveToFront(key interface{}) error {
+	var e *list.Element
+	if pair, present := om.pairs[key]; present {
+		e = pair.element
+	} else {
+		return fmt.Errorf("error: key %v not found", key)
+	}
+	om.list.MoveToFront(e)
+	return nil
 }
