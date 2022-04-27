@@ -13,7 +13,7 @@ It offers the following features:
 
 ## Installation
 ```bash
-go get -u github.com/wk8/go-ordered-map
+go get -u github.com/wk8/go-ordered-map/v2
 ```
 
 Or use your favorite golang vendoring tool!
@@ -36,7 +36,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/wk8/go-ordered-map"
+	"github.com/wk8/go-ordered-map/v2"
 )
 
 func main() {
