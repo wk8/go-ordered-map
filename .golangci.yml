@@ -18,7 +18,8 @@ linters:
     - durationcheck
     - errcheck
     - errchkjson
-    - errname
+    # FIXME: commented out as it crashes with 1.18 for now
+    # - errname
     - errorlint
     - exhaustive
     - exportloopref
@@ -48,7 +49,6 @@ linters:
     - ifshort
     - importas
     - ineffassign
-    - ireturn
     - lll
     - maintidx
     - makezero
@@ -63,7 +63,8 @@ linters:
     - prealloc
     - predeclared
     - promlinter
-    - revive
+    # FIXME: doesn't support 1.18 yet
+    # - revive
     - rowserrcheck
     - sqlclosecheck
     - staticcheck

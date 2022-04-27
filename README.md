@@ -8,7 +8,7 @@ It offers the following features:
 * optimal runtime performance (all operations are constant time)
 * optimal memory usage (only one copy of values, no unnecessary memory allocation)
 * allows iterating from newest or oldest keys indifferently, without memory copy, allowing to `break` the iteration, and in time linear to the number of keys iterated over rather than the total length of the ordered map
-* takes and returns generic `interface{}`s
+* supports any generic types for both keys and values. If you're running go < 1.18, you can use [version 1](https://github.com/wk8/go-ordered-map/tree/v1) that takes and returns generic `interface{}`s instead of using generics
 * idiomatic API, akin to that of [`container/list`](https://golang.org/pkg/container/list)
 
 ## Installation
@@ -20,7 +20,9 @@ Or use your favorite golang vendoring tool!
 
 ## Supported go versions
 
-All go versions >= 1.13 are supported. There's no reason for older versions to not also work, but they're not part of the build matrix.
+Go >= 1.18 is required to use version >= 2 of this library, as it uses generics.
+
+If you're running go < 1.18, you can use [version 1](https://github.com/wk8/go-ordered-map/tree/v1) instead.
 
 ## Documentation
 
@@ -38,14 +40,14 @@ import (
 )
 
 func main() {
-	om := orderedmap.New()
+	om := orderedmap.New[string, string]()
 
 	om.Set("foo", "bar")
 	om.Set("bar", "baz")
 	om.Set("coucou", "toi")
 
-	fmt.Println(om.Get("foo"))          // => bar, true
-	fmt.Println(om.Get("i dont exist")) // => <nil>, false
+	fmt.Println(om.Get("foo"))          // => "bar", true
+	fmt.Println(om.Get("i dont exist")) // => "", false
 
 	// iterating pairs from oldest to newest:
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
@@ -69,14 +71,15 @@ func main() {
 }
 ```
 
-All of `OrderedMap`'s methods accept and return `interface{}`s, so you can use any type of keys that regular `map`s accept, as well pack/unpack arbitrary values, e.g.:
+An `OrderedMap`'s keys must implement `comparable`, and its values can be anything, for example:
+
 ```go
 type myStruct struct {
 	payload string
 }
 
 func main() {
-	om := orderedmap.New()
+	om := orderedmap.New[int, *myStruct]()
 
 	om.Set(12, &myStruct{"foo"})
 	om.Set(1, &myStruct{"bar"})
@@ -85,10 +88,10 @@ func main() {
 	if !present {
 		panic("should be there!")
 	}
-	fmt.Println(value.(*myStruct).payload) // => foo
+	fmt.Println(value.payload) // => foo
 
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
-		fmt.Printf("%d => %s\n", pair.Key, pair.Value.(*myStruct).payload)
+		fmt.Printf("%d => %s\n", pair.Key, pair.Value.payload)
 	} // prints:
 	// 12 => foo
 	// 1 => bar
