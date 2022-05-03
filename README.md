@@ -1,3 +1,4 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/wk8/go-ordered-map/v2.svg)](https://pkg.go.dev/github.com/wk8/go-ordered-map/v2)
 [![Build Status](https://circleci.com/gh/wk8/go-ordered-map.svg?style=svg)](https://app.circleci.com/pipelines/github/wk8/go-ordered-map)
 
 # Goland Ordered Maps
@@ -23,10 +24,6 @@ Or use your favorite golang vendoring tool!
 Go >= 1.18 is required to use version >= 2 of this library, as it uses generics.
 
 If you're running go < 1.18, you can use [version 1](https://github.com/wk8/go-ordered-map/tree/v1) instead.
-
-## Documentation
-
-[The full documentation is available on godoc.org](https://godoc.org/github.com/wk8/go-ordered-map).
 
 ## Example / usage
 
