@@ -12,6 +12,10 @@ It offers the following features:
 * supports any generic types for both keys and values. If you're running go < 1.18, you can use [version 1](https://github.com/wk8/go-ordered-map/tree/v1) that takes and returns generic `interface{}`s instead of using generics
 * idiomatic API, akin to that of [`container/list`](https://golang.org/pkg/container/list)
 
+## Documentation
+
+[The full documentation is available on pkg.go.dev](https://pkg.go.dev/github.com/wk8/go-ordered-map/v2).
+
 ## Installation
 ```bash
 go get -u github.com/wk8/go-ordered-map/v2
