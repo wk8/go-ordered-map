@@ -33,13 +33,41 @@ func New[K comparable, V any]() *OrderedMap[K, V] {
 	}
 }
 
+// Clone creates a new OrderedMap that has the same mappings as the current map.
+func (om *OrderedMap[K, V]) Clone() *OrderedMap[K, V] {
+	ret := &OrderedMap[K, V]{
+		pairs: make(map[K]*Pair[K, V]),
+		list:  list.New[*Pair[K, V]](),
+	}
+	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+		ret.setNewPair(pair)
+	}
+	return ret
+}
+
+// Copy is an alias for Clone.
+func (om *OrderedMap[K, V]) Copy() *OrderedMap[K, V] {
+	return om.Clone()
+}
+
+// Reverse reverses the order of the mappings within a map.
+func (om *OrderedMap[K, V]) Reverse() {
+	curr := om.list.Front()
+	prev, next := curr, curr.Next()
+	for curr != nil {
+		next = curr.Next()
+		om.list.MoveBefore(curr, prev)
+		prev = curr
+		curr = next
+	}
+}
+
 // Get looks for the given key, and returns the value associated with it,
 // or V's nil value if not found. The boolean it returns says whether the key is present in the map.
 func (om *OrderedMap[K, V]) Get(key K) (val V, present bool) {
 	if pair, present := om.pairs[key]; present {
 		return pair.Value, true
 	}
-
 	return
 }
 
@@ -63,14 +91,11 @@ func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
 		pair.Value = value
 		return oldValue, true
 	}
-
 	pair := &Pair[K, V]{
 		Key:   key,
 		Value: value,
 	}
-	pair.element = om.list.PushBack(pair)
-	om.pairs[key] = pair
-
+	om.setNewPair(pair)
 	return
 }
 
@@ -90,9 +115,19 @@ func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
 	return
 }
 
+func (om *OrderedMap[K, V]) setNewPair(pair *Pair[K, V]) {
+	pair.element = om.list.PushBack(pair)
+	om.pairs[pair.Key] = pair
+}
+
 // Len returns the length of the ordered map.
 func (om *OrderedMap[K, V]) Len() int {
 	return len(om.pairs)
+}
+
+// Size is an alias for Len.
+func (om *OrderedMap[K, V]) Size() int {
+	return om.Len()
 }
 
 // Oldest returns a pointer to the oldest pair. It's meant to be used to iterate on the ordered map's
@@ -102,11 +137,31 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 	return listElementToPair(om.list.Front())
 }
 
+// First is an alias for Oldest, as sometimes it can be more clear.
+func (om *OrderedMap[K, V]) First() *Pair[K, V] {
+	return om.Oldest()
+}
+
+// Front is an alias for Oldest, as sometimes it can be more clear.
+func (om *OrderedMap[K, V]) Front() *Pair[K, V] {
+	return om.Oldest()
+}
+
 // Newest returns a pointer to the newest pair. It's meant to be used to iterate on the ordered map's
 // pairs from the newest to the oldest, e.g.:
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
 	return listElementToPair(om.list.Back())
+}
+
+// Last is an alias for Newest, as sometimes it can be more clear.
+func (om *OrderedMap[K, V]) Last() *Pair[K, V] {
+	return om.Newest()
+}
+
+// Back is an alias for Newest, as sometimes it can be more clear.
+func (om *OrderedMap[K, V]) Back() *Pair[K, V] {
+	return om.Newest()
 }
 
 // Next returns a pointer to the next pair.
