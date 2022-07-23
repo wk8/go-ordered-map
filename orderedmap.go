@@ -33,8 +33,8 @@ func New[K comparable, V any]() *OrderedMap[K, V] {
 	}
 }
 
-// Copy creates a new OrderedMap that has the same mappings as the current map.
-func (om *OrderedMap[K, V]) Copy() *OrderedMap[K, V] {
+// Clone creates a new OrderedMap that has the same mappings as the current map.
+func (om *OrderedMap[K, V]) Clone() *OrderedMap[K, V] {
 	ret := &OrderedMap[K, V]{
 		pairs: make(map[K]*Pair[K, V]),
 		list:  list.New[*Pair[K, V]](),
@@ -43,6 +43,18 @@ func (om *OrderedMap[K, V]) Copy() *OrderedMap[K, V] {
 		ret.Set(pair.Key, pair.Value)
 	}
 	return ret
+}
+
+// Copy is an alias for Clone.
+func (om *OrderedMap[K, V]) Copy() *OrderedMap[K, V] {
+	return om.Clone()
+}
+
+// Range calls the given function for each key-value pair in the map.
+func (om *OrderedMap[K, V]) Range(f func(K, V)) {
+	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+		f(pair.Key, pair.Value)
+	}
 }
 
 // Reverse reverses the order of the mappings within a map.
@@ -115,6 +127,11 @@ func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
 
 // Len returns the length of the ordered map.
 func (om *OrderedMap[K, V]) Len() int {
+	return len(om.pairs)
+}
+
+// Size is an alias for Len.
+func (om *OrderedMap[K, V]) Size() int {
 	return len(om.pairs)
 }
 
