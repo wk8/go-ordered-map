@@ -102,16 +102,31 @@ func TestBasicFeatures(t *testing.T) {
 
 	// check iterations again
 	i = 0
-	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+	for pair := om.First(); pair != nil; pair = pair.Next() {
 		assert.Equal(t, i, pair.Key)
 		assert.Equal(t, 4*i, pair.Value)
 		i += 2
 	}
 	i = 2 * ((n - 1) / 2)
-	for pair := om.Newest(); pair != nil; pair = pair.Prev() {
+	for pair := om.Last(); pair != nil; pair = pair.Prev() {
 		assert.Equal(t, i, pair.Key)
 		assert.Equal(t, 4*i, pair.Value)
 		i -= 2
+	}
+
+	// check copying
+	com := om.Copy()
+	for np, cp := om.Front(), com.Front(); np != nil; np, cp = np.Next(), cp.Next() {
+		assert.Equal(t, np.Key, cp.Key)
+		assert.Equal(t, np.Value, cp.Value)
+	}
+
+	// check reversing
+	rom := om.Copy()
+	rom.Reverse()
+	for np, rp := om.Front(), rom.Back(); np != nil; np, rp = np.Next(), rp.Prev() {
+		assert.Equal(t, np.Key, rp.Key)
+		assert.Equal(t, np.Value, rp.Value)
 	}
 }
 
