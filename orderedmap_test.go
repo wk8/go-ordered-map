@@ -122,12 +122,20 @@ func TestBasicFeatures(t *testing.T) {
 	}
 
 	// check reversing
-	rom := om.Copy()
+	rom := om.Clone()
 	rom.Reverse()
 	for np, rp := om.Front(), rom.Back(); np != nil; np, rp = np.Next(), rp.Prev() {
 		assert.Equal(t, np.Key, rp.Key)
 		assert.Equal(t, np.Value, rp.Value)
 	}
+	rom.Reverse()
+	for np, rp := om.Front(), rom.Front(); np != nil; np, rp = np.Next(), rp.Next() {
+		assert.Equal(t, np.Key, rp.Key)
+		assert.Equal(t, np.Value, rp.Value)
+	}
+
+	// check sizing
+	assert.Equal(t, om.Size(), om.Len())
 }
 
 func TestUpdatingDoesntChangePairsOrder(t *testing.T) {
