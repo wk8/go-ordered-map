@@ -11,7 +11,7 @@ import (
 
 func TestBasicFeatures(t *testing.T) {
 	n := 100
-	om := New()
+	om := New[int, int]()
 
 	// set(i, 2 * i)
 	for i := 0; i < n; i++ {
@@ -19,7 +19,7 @@ func TestBasicFeatures(t *testing.T) {
 		oldValue, present := om.Set(i, 2*i)
 		assertLenEqual(t, om, i+1)
 
-		assert.Nil(t, oldValue)
+		assert.Equal(t, 0, oldValue)
 		assert.False(t, present)
 	}
 
@@ -83,7 +83,7 @@ func TestBasicFeatures(t *testing.T) {
 		// deleting again shouldn't change anything
 		value, present = om.Delete(i)
 		assertLenEqual(t, om, n-j-1)
-		assert.Nil(t, value)
+		assert.Equal(t, 0, value)
 		assert.False(t, present)
 	}
 
@@ -96,7 +96,7 @@ func TestBasicFeatures(t *testing.T) {
 
 		i = 2*j + 1
 		value, present = om.Get(i)
-		assert.Nil(t, value)
+		assert.Equal(t, 0, value)
 		assert.False(t, present)
 	}
 
@@ -113,6 +113,62 @@ func TestBasicFeatures(t *testing.T) {
 		assert.Equal(t, 4*i, pair.Value)
 		i -= 2
 	}
+	// check iterations with aliases
+	i = 0
+	for pair := om.Front(); pair != nil; pair = pair.Next() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i += 2
+	}
+	i = 2 * ((n - 1) / 2)
+	for pair := om.Back(); pair != nil; pair = pair.Prev() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i -= 2
+	}
+	i = 0
+	for pair := om.First(); pair != nil; pair = pair.Next() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i += 2
+	}
+	i = 2 * ((n - 1) / 2)
+	for pair := om.Last(); pair != nil; pair = pair.Prev() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i -= 2
+	}
+
+	// check cloning
+	com := om.Clone()
+	assert.NotSame(t, com, om)
+	for np, cp := om.Front(), com.Front(); np != nil; np, cp = np.Next(), cp.Next() {
+		assert.Equal(t, np.Key, cp.Key)
+		assert.Equal(t, np.Value, cp.Value)
+	}
+	// check cloning alias
+	com = om.Copy()
+	assert.NotSame(t, com, om)
+	for np, cp := om.Front(), com.Front(); np != nil; np, cp = np.Next(), cp.Next() {
+		assert.Equal(t, np.Key, cp.Key)
+		assert.Equal(t, np.Value, cp.Value)
+	}
+
+	// check reversing
+	rom := om.Clone()
+	rom.Reverse()
+	for np, rp := om.Front(), rom.Back(); np != nil; np, rp = np.Next(), rp.Prev() {
+		assert.Equal(t, np.Key, rp.Key)
+		assert.Equal(t, np.Value, rp.Value)
+	}
+	rom.Reverse()
+	for np, rp := om.Front(), rom.Front(); np != nil; np, rp = np.Next(), rp.Next() {
+		assert.Equal(t, np.Key, rp.Key)
+		assert.Equal(t, np.Value, rp.Value)
+	}
+
+	// check sizing
+	assert.Equal(t, om.Size(), om.Len())
 }
 
 func TestUpdatingDoesntChangePairsOrder(t *testing.T) {
