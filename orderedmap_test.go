@@ -102,6 +102,31 @@ func TestBasicFeatures(t *testing.T) {
 
 	// check iterations again
 	i = 0
+	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i += 2
+	}
+	i = 2 * ((n - 1) / 2)
+	for pair := om.Newest(); pair != nil; pair = pair.Prev() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i -= 2
+	}
+	// check iterations with aliases
+	i = 0
+	for pair := om.Front(); pair != nil; pair = pair.Next() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i += 2
+	}
+	i = 2 * ((n - 1) / 2)
+	for pair := om.Back(); pair != nil; pair = pair.Prev() {
+		assert.Equal(t, i, pair.Key)
+		assert.Equal(t, 4*i, pair.Value)
+		i -= 2
+	}
+	i = 0
 	for pair := om.First(); pair != nil; pair = pair.Next() {
 		assert.Equal(t, i, pair.Key)
 		assert.Equal(t, 4*i, pair.Value)
@@ -114,8 +139,16 @@ func TestBasicFeatures(t *testing.T) {
 		i -= 2
 	}
 
-	// check copying
-	com := om.Copy()
+	// check cloning
+	com := om.Clone()
+	assert.NotSame(t, com, om)
+	for np, cp := om.Front(), com.Front(); np != nil; np, cp = np.Next(), cp.Next() {
+		assert.Equal(t, np.Key, cp.Key)
+		assert.Equal(t, np.Value, cp.Value)
+	}
+	// check cloning alias
+	com = om.Copy()
+	assert.NotSame(t, com, om)
 	for np, cp := om.Front(), com.Front(); np != nil; np, cp = np.Next(), cp.Next() {
 		assert.Equal(t, np.Key, cp.Key)
 		assert.Equal(t, np.Value, cp.Value)

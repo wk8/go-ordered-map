@@ -40,7 +40,7 @@ func (om *OrderedMap[K, V]) Clone() *OrderedMap[K, V] {
 		list:  list.New[*Pair[K, V]](),
 	}
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
-		ret.Set(pair.Key, pair.Value)
+		ret.setNewPair(pair)
 	}
 	return ret
 }
@@ -48,13 +48,6 @@ func (om *OrderedMap[K, V]) Clone() *OrderedMap[K, V] {
 // Copy is an alias for Clone.
 func (om *OrderedMap[K, V]) Copy() *OrderedMap[K, V] {
 	return om.Clone()
-}
-
-// Range calls the given function for each key-value pair in the map.
-func (om *OrderedMap[K, V]) Range(f func(K, V)) {
-	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
-		f(pair.Key, pair.Value)
-	}
 }
 
 // Reverse reverses the order of the mappings within a map.
@@ -98,14 +91,11 @@ func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
 		pair.Value = value
 		return oldValue, true
 	}
-
 	pair := &Pair[K, V]{
 		Key:   key,
 		Value: value,
 	}
-	pair.element = om.list.PushBack(pair)
-	om.pairs[key] = pair
-
+	om.setNewPair(pair)
 	return
 }
 
@@ -125,6 +115,11 @@ func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
 	return
 }
 
+func (om *OrderedMap[K, V]) setNewPair(pair *Pair[K, V]) {
+	pair.element = om.list.PushBack(pair)
+	om.pairs[pair.Key] = pair
+}
+
 // Len returns the length of the ordered map.
 func (om *OrderedMap[K, V]) Len() int {
 	return len(om.pairs)
@@ -132,7 +127,7 @@ func (om *OrderedMap[K, V]) Len() int {
 
 // Size is an alias for Len.
 func (om *OrderedMap[K, V]) Size() int {
-	return len(om.pairs)
+	return om.Len()
 }
 
 // Oldest returns a pointer to the oldest pair. It's meant to be used to iterate on the ordered map's
@@ -144,12 +139,12 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 
 // First is an alias for Oldest, as sometimes it can be more clear.
 func (om *OrderedMap[K, V]) First() *Pair[K, V] {
-	return listElementToPair(om.list.Front())
+	return om.Oldest()
 }
 
 // Front is an alias for Oldest, as sometimes it can be more clear.
 func (om *OrderedMap[K, V]) Front() *Pair[K, V] {
-	return listElementToPair(om.list.Front())
+	return om.Oldest()
 }
 
 // Newest returns a pointer to the newest pair. It's meant to be used to iterate on the ordered map's
@@ -161,12 +156,12 @@ func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
 
 // Last is an alias for Newest, as sometimes it can be more clear.
 func (om *OrderedMap[K, V]) Last() *Pair[K, V] {
-	return listElementToPair(om.list.Back())
+	return om.Newest()
 }
 
 // Back is an alias for Newest, as sometimes it can be more clear.
 func (om *OrderedMap[K, V]) Back() *Pair[K, V] {
-	return listElementToPair(om.list.Back())
+	return om.Newest()
 }
 
 // Next returns a pointer to the next pair.
