@@ -117,7 +117,7 @@ func (om *OrderedMap) Delete(key interface{}) (interface{}, bool) {
 	return nil, false
 }
 
-func (om *OrderedMap[K, V]) setNewPair(pair *Pair[K, V]) {
+func (om *OrderedMap) setNewPair(pair *Pair) {
 	pair.element = om.list.PushBack(pair)
 	om.pairs[pair.Key] = pair
 }

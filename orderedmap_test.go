@@ -11,7 +11,7 @@ import (
 
 func TestBasicFeatures(t *testing.T) {
 	n := 100
-	om := New[int, int]()
+	om := New()
 
 	// set(i, 2 * i)
 	for i := 0; i < n; i++ {
@@ -19,7 +19,7 @@ func TestBasicFeatures(t *testing.T) {
 		oldValue, present := om.Set(i, 2*i)
 		assertLenEqual(t, om, i+1)
 
-		assert.Equal(t, 0, oldValue)
+		assert.Nil(t, oldValue)
 		assert.False(t, present)
 	}
 
@@ -83,7 +83,7 @@ func TestBasicFeatures(t *testing.T) {
 		// deleting again shouldn't change anything
 		value, present = om.Delete(i)
 		assertLenEqual(t, om, n-j-1)
-		assert.Equal(t, 0, value)
+		assert.Nil(t, value)
 		assert.False(t, present)
 	}
 
@@ -96,7 +96,7 @@ func TestBasicFeatures(t *testing.T) {
 
 		i = 2*j + 1
 		value, present = om.Get(i)
-		assert.Equal(t, 0, value)
+		assert.Nil(t, value)
 		assert.False(t, present)
 	}
 
