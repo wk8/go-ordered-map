@@ -2,6 +2,7 @@ package orderedmap
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -311,4 +312,33 @@ func randomHexString(t *testing.T, length int) string {
 	}
 
 	return hex.EncodeToString(randBytes)
+}
+
+func TestMarshalJSON(t *testing.T) {
+	t.Run("int key", func(t *testing.T) {
+		om := New[int, any]()
+		om.Set(1, "bar")
+		om.Set(7, "baz")
+		om.Set(2, 28)
+		om.Set(3, 100)
+		om.Set(4, "baz")
+		om.Set(5, "28")
+		om.Set(6, "100")
+		om.Set(8, "baz")
+		om.Set(8, "baz")
+
+		b, err := json.Marshal(om)
+		assert.Nil(t, err)
+		assert.Equal(t, `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`, string(b))
+	})
+
+	t.Run("string key", func(t *testing.T) {
+		om := New[string, any]()
+		om.Set("test", "bar")
+		om.Set("abc", true)
+
+		b, err := json.Marshal(om)
+		assert.Nil(t, err)
+		assert.Equal(t, `{"test":"bar","abc":true}`, string(b))
+	})
 }

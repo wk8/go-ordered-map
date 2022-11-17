@@ -8,6 +8,8 @@
 package orderedmap
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 
 	list "github.com/bahlo/generic-list-go"
@@ -107,6 +109,46 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
 	return listElementToPair(om.list.Back())
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
+	result := "{"
+
+	i := 0
+	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+		if i > 0 {
+			result += ","
+		}
+
+		var marshaledKey string
+		switch key := any(pair.Key).(type) {
+		case string:
+			marshaledKey = `"` + key + `"`
+		case encoding.TextMarshaler:
+			marshaledKeyBytes, err := key.MarshalText()
+			if err != nil {
+				return nil, err
+			}
+			marshaledKey = string(marshaledKeyBytes)
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+			marshaledKey = fmt.Sprintf(`"%d"`, key)
+		default:
+			return nil, fmt.Errorf("unsupported key type: %T", key)
+		}
+
+		value, err := json.Marshal(pair.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		result += fmt.Sprintf("%s:%s", marshaledKey, value)
+		i++
+	}
+
+	result += "}"
+
+	return []byte(result), nil
 }
 
 // Next returns a pointer to the next pair.
