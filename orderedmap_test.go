@@ -314,6 +314,12 @@ func randomHexString(t *testing.T, length int) string {
 	return hex.EncodeToString(randBytes)
 }
 
+type customType float32
+
+func (c customType) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%.2f", c)), nil
+}
+
 func TestMarshalJSON(t *testing.T) {
 	t.Run("int key", func(t *testing.T) {
 		om := New[int, any]()
@@ -328,7 +334,7 @@ func TestMarshalJSON(t *testing.T) {
 		om.Set(8, "baz")
 
 		b, err := json.Marshal(om)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`, string(b))
 	})
 
@@ -338,7 +344,17 @@ func TestMarshalJSON(t *testing.T) {
 		om.Set("abc", true)
 
 		b, err := json.Marshal(om)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, `{"test":"bar","abc":true}`, string(b))
+	})
+
+	t.Run("TextMarshaller key", func(t *testing.T) {
+		om := New[customType, any]()
+		om.Set(customType(1.5), "bar")
+		om.Set(customType(2.78), true)
+
+		b, err := json.Marshal(om)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"1.50":"bar","2.78":true}`, string(b))
 	})
 }

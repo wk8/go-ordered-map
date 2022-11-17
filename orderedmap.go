@@ -124,7 +124,7 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		var marshaledKey string
 		switch key := any(pair.Key).(type) {
 		case string:
-			marshaledKey = `"` + key + `"`
+			marshaledKey = key
 		case encoding.TextMarshaler:
 			marshaledKeyBytes, err := key.MarshalText()
 			if err != nil {
@@ -132,10 +132,11 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 			}
 			marshaledKey = string(marshaledKeyBytes)
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-			marshaledKey = fmt.Sprintf(`"%d"`, key)
+			marshaledKey = fmt.Sprintf(`%d`, key)
 		default:
 			return nil, fmt.Errorf("unsupported key type: %T", key)
 		}
+		marshaledKey = `"` + marshaledKey + `"`
 
 		value, err := json.Marshal(pair.Value)
 		if err != nil {
