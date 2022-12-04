@@ -8,7 +8,7 @@ import (
 )
 
 func Example() {
-	om := orderedmap.New[string, string]()
+	om := orderedmap.New[string, string](3)
 
 	om.Set("foo", "bar")
 	om.Set("bar", "baz")
