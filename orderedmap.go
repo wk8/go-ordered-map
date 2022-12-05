@@ -8,6 +8,7 @@
 package orderedmap
 
 import (
+	"bytes"
 	"encoding"
 	"encoding/json"
 	"fmt"
@@ -113,12 +114,13 @@ func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
 
 // MarshalJSON implements the json.Marshaler interface.
 func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
-	result := "{"
+	buf := bytes.Buffer{}
+	buf.WriteString("{")
 
 	i := 0
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
 		if i > 0 {
-			result += ","
+			buf.WriteString(",")
 		}
 
 		var marshaledKey string
@@ -143,13 +145,14 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 			return nil, err
 		}
 
-		result += fmt.Sprintf("%s:%s", marshaledKey, value)
+		buf.WriteString(marshaledKey + ":")
+		buf.Write(value)
 		i++
 	}
 
-	result += "}"
+	buf.WriteString("}")
 
-	return []byte(result), nil
+	return buf.Bytes(), nil
 }
 
 // Next returns a pointer to the next pair.
