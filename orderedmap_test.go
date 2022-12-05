@@ -358,3 +358,22 @@ func TestMarshalJSON(t *testing.T) {
 		assert.Equal(t, `{"1.50":"bar","2.78":true}`, string(b))
 	})
 }
+
+func BenchmarkMarshalJSON(b *testing.B) {
+	om := New[int, any]()
+	om.Set(1, "bar")
+	om.Set(7, "baz")
+	om.Set(2, 28)
+	om.Set(3, 100)
+	om.Set(4, "baz")
+	om.Set(5, "28")
+	om.Set(6, "100")
+	om.Set(8, "baz")
+	om.Set(8, "baz")
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		json.Marshal(om)
+	}
+}
