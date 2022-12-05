@@ -12,6 +12,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	list "github.com/bahlo/generic-list-go"
 )
@@ -133,8 +134,26 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 				return nil, err
 			}
 			marshaledKey = string(marshaledKeyBytes)
-		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-			marshaledKey = fmt.Sprintf(`%d`, key)
+		case int:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case int8:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case int16:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case int32:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case int64:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case uint:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case uint8:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case uint16:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case uint32:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
+		case uint64:
+			marshaledKey = strconv.FormatInt(int64(key), 10)
 		default:
 			return nil, fmt.Errorf("unsupported key type: %T", key)
 		}
