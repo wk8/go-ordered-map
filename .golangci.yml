@@ -9,8 +9,6 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
-    - cyclop
-    - deadcode
     - decorder
     - depguard
     - dogsled
@@ -33,7 +31,6 @@ linters:
     - gocritic
     - gocyclo
     - godox
-    - goerr113
     - gofmt
     - gofumpt
     - goheader
@@ -54,7 +51,6 @@ linters:
     - makezero
     - misspell
     - nakedret
-    - nestif
     - nilerr
     - nilnil
     - noctx
@@ -83,4 +79,3 @@ linters:
     - varnamelen
     - wastedassign
     - whitespace
-    - wrapcheck

@@ -1,6 +1,7 @@
 package orderedmap_test
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/wk8/go-ordered-map/v2"
@@ -32,6 +33,20 @@ func Example() {
 		}
 	}
 
+	fmt.Println("## JSON serialization: ##")
+	data, err := json.Marshal(om)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(data))
+
+	fmt.Println("## JSON deserialization: ##")
+	om2 := orderedmap.New[string, string]()
+	if err := json.Unmarshal(data, &om2); err != nil {
+		panic(err)
+	}
+	fmt.Println(om2.Oldest().Key)
+
 	// Output:
 	// ## Get operations: ##
 	// bar true
@@ -43,4 +58,8 @@ func Example() {
 	// ## Iterating over the 2 newest pairs: ##
 	// coucou => toi
 	// bar => baz
+	// ## JSON serialization: ##
+	// {"foo":"bar","bar":"baz","coucou":"toi"}
+	// ## JSON deserialization: ##
+	// foo
 }

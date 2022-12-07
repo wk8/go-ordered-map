@@ -6,7 +6,11 @@ all: test lint
 # the TEST_FLAGS env var can be set to eg run only specific tests
 .PHONY: test
 test:
-	go test -v -count=1 -race -cover "$$TEST_FLAGS"
+	go test -v -count=1 -race -cover $(TEST_FLAGS)
+
+.PHONY: bench
+bench:
+	go test -bench=.
 
 .PHONY: lint
 lint:

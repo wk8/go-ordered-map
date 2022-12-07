@@ -1,9 +1,7 @@
 package orderedmap
 
 import (
-	"encoding/hex"
 	"fmt"
-	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -261,54 +259,4 @@ func TestMove(t *testing.T) {
 
 	err = om.MoveToFront(100)
 	assert.NotEqual(t, err, nil)
-}
-
-/* Test helpers */
-
-func assertOrderedPairsEqual[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedKeys []K, expectedValues []V) {
-	assertOrderedPairsEqualFromNewest(t, om, expectedKeys, expectedValues)
-	assertOrderedPairsEqualFromOldest(t, om, expectedKeys, expectedValues)
-}
-
-func assertOrderedPairsEqualFromNewest[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedKeys []K, expectedValues []V) {
-	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), om.Len()) {
-		i := om.Len() - 1
-		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
-			assert.Equal(t, expectedKeys[i], pair.Key)
-			assert.Equal(t, expectedValues[i], pair.Value)
-			i--
-		}
-	}
-}
-
-func assertOrderedPairsEqualFromOldest[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedKeys []K, expectedValues []V) {
-	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), om.Len()) {
-		i := om.Len() - 1
-		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
-			assert.Equal(t, expectedKeys[i], pair.Key)
-			assert.Equal(t, expectedValues[i], pair.Value)
-			i--
-		}
-	}
-}
-
-func assertLenEqual[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedLen int) {
-	assert.Equal(t, expectedLen, om.Len())
-
-	// also check the list length, for good measure
-	assert.Equal(t, expectedLen, om.list.Len())
-}
-
-func randomHexString(t *testing.T, length int) string {
-	b := length / 2
-	randBytes := make([]byte, b)
-
-	if n, err := rand.Read(randBytes); err != nil || n != b {
-		if err == nil {
-			err = fmt.Errorf("only got %v random bytes, expected %v", n, b)
-		}
-		t.Fatal(err)
-	}
-
-	return hex.EncodeToString(randBytes)
 }
