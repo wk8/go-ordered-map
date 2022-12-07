@@ -8,11 +8,7 @@
 package orderedmap
 
 import (
-	"bytes"
-	"encoding"
-	"encoding/json"
 	"fmt"
-	"strconv"
 
 	list "github.com/bahlo/generic-list-go"
 )
@@ -111,67 +107,6 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
 	return listElementToPair(om.list.Back())
-}
-
-// MarshalJSON implements the json.Marshaler interface.
-func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
-	buf := bytes.Buffer{}
-	buf.WriteString("{")
-
-	i := 0
-	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
-		if i > 0 {
-			buf.WriteString(",")
-		}
-
-		var marshaledKey string
-		switch key := any(pair.Key).(type) {
-		case string:
-			marshaledKey = key
-		case encoding.TextMarshaler:
-			marshaledKeyBytes, err := key.MarshalText()
-			if err != nil {
-				return nil, err
-			}
-			marshaledKey = string(marshaledKeyBytes)
-		case int:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case int8:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case int16:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case int32:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case int64:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case uint:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case uint8:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case uint16:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case uint32:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		case uint64:
-			marshaledKey = strconv.FormatInt(int64(key), 10)
-		default:
-			return nil, fmt.Errorf("unsupported key type: %T", key)
-		}
-		marshaledKey = `"` + marshaledKey + `"`
-
-		value, err := json.Marshal(pair.Value)
-		if err != nil {
-			return nil, err
-		}
-
-		buf.WriteString(marshaledKey + ":")
-		buf.Write(value)
-		i++
-	}
-
-	buf.WriteString("}")
-
-	return buf.Bytes(), nil
 }
 
 // Next returns a pointer to the next pair.

@@ -99,6 +99,19 @@ func main() {
 }
 ```
 
+`OrderedMap`s also support JSON serialization/deserialization, and preserves order:
+
+```go
+// serialization
+data, err := json.Marshal(om)
+...
+
+// deserialization
+om := orderedmap.New[string, string]() // or orderedmap.New[int, any](), or any type you expect
+err := json.Unmarshal(data, &om)
+...
+```
+
 ## Alternatives
 
 There are several other ordered map golang implementations out there, but I believe that at the time of writing none of them offer the same functionality as this library; more specifically:

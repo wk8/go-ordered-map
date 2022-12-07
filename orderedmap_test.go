@@ -1,10 +1,7 @@
 package orderedmap
 
 import (
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -262,118 +259,4 @@ func TestMove(t *testing.T) {
 
 	err = om.MoveToFront(100)
 	assert.NotEqual(t, err, nil)
-}
-
-/* Test helpers */
-
-func assertOrderedPairsEqual[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedKeys []K, expectedValues []V) {
-	assertOrderedPairsEqualFromNewest(t, om, expectedKeys, expectedValues)
-	assertOrderedPairsEqualFromOldest(t, om, expectedKeys, expectedValues)
-}
-
-func assertOrderedPairsEqualFromNewest[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedKeys []K, expectedValues []V) {
-	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), om.Len()) {
-		i := om.Len() - 1
-		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
-			assert.Equal(t, expectedKeys[i], pair.Key)
-			assert.Equal(t, expectedValues[i], pair.Value)
-			i--
-		}
-	}
-}
-
-func assertOrderedPairsEqualFromOldest[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedKeys []K, expectedValues []V) {
-	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), om.Len()) {
-		i := om.Len() - 1
-		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
-			assert.Equal(t, expectedKeys[i], pair.Key)
-			assert.Equal(t, expectedValues[i], pair.Value)
-			i--
-		}
-	}
-}
-
-func assertLenEqual[K comparable, V any](t *testing.T, om *OrderedMap[K, V], expectedLen int) {
-	assert.Equal(t, expectedLen, om.Len())
-
-	// also check the list length, for good measure
-	assert.Equal(t, expectedLen, om.list.Len())
-}
-
-func randomHexString(t *testing.T, length int) string {
-	b := length / 2
-	randBytes := make([]byte, b)
-
-	if n, err := rand.Read(randBytes); err != nil || n != b {
-		if err == nil {
-			err = fmt.Errorf("only got %v random bytes, expected %v", n, b)
-		}
-		t.Fatal(err)
-	}
-
-	return hex.EncodeToString(randBytes)
-}
-
-type customType float32
-
-func (c customType) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%.2f", c)), nil
-}
-
-func TestMarshalJSON(t *testing.T) {
-	t.Run("int key", func(t *testing.T) {
-		om := New[int, any]()
-		om.Set(1, "bar")
-		om.Set(7, "baz")
-		om.Set(2, 28)
-		om.Set(3, 100)
-		om.Set(4, "baz")
-		om.Set(5, "28")
-		om.Set(6, "100")
-		om.Set(8, "baz")
-		om.Set(8, "baz")
-
-		b, err := json.Marshal(om)
-		assert.NoError(t, err)
-		assert.Equal(t, `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`, string(b))
-	})
-
-	t.Run("string key", func(t *testing.T) {
-		om := New[string, any]()
-		om.Set("test", "bar")
-		om.Set("abc", true)
-
-		b, err := json.Marshal(om)
-		assert.NoError(t, err)
-		assert.Equal(t, `{"test":"bar","abc":true}`, string(b))
-	})
-
-	t.Run("TextMarshaller key", func(t *testing.T) {
-		om := New[customType, any]()
-		om.Set(customType(1.5), "bar")
-		om.Set(customType(2.78), true)
-
-		b, err := json.Marshal(om)
-		assert.NoError(t, err)
-		assert.Equal(t, `{"1.50":"bar","2.78":true}`, string(b))
-	})
-}
-
-func BenchmarkMarshalJSON(b *testing.B) {
-	om := New[int, any]()
-	om.Set(1, "bar")
-	om.Set(7, "baz")
-	om.Set(2, 28)
-	om.Set(3, 100)
-	om.Set(4, "baz")
-	om.Set(5, "28")
-	om.Set(6, "100")
-	om.Set(8, "baz")
-	om.Set(8, "baz")
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		json.Marshal(om)
-	}
 }
