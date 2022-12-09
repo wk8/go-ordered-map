@@ -1,6 +1,7 @@
 package orderedmap
 
 import (
+	"bytes"
 	"encoding"
 	"encoding/json"
 	"fmt"
@@ -64,7 +65,21 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 
 	writer.RawByte('}')
 
-	return writer.Buffer.Buf, writer.Error
+	return dumpWriter(&writer)
+}
+
+func dumpWriter(writer *jwriter.Writer) ([]byte, error) {
+	if writer.Error != nil {
+		return nil, writer.Error
+	}
+
+	var buf bytes.Buffer
+	buf.Grow(writer.Size())
+	if _, err := writer.DumpTo(&buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.

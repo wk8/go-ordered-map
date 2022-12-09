@@ -46,10 +46,11 @@ func TestMarshalJSON(t *testing.T) {
 		om.Set(6, "100")
 		om.Set(8, "baz")
 		om.Set(8, "baz")
+		om.Set(9, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque auctor augue accumsan mi maximus, quis viverra massa pretium. Phasellus imperdiet sapien a interdum sollicitudin. Duis at commodo lectus, a lacinia sem.")
 
 		b, err := json.Marshal(om)
 		assert.NoError(t, err)
-		assert.Equal(t, `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`, string(b))
+		assert.Equal(t, `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz","9":"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque auctor augue accumsan mi maximus, quis viverra massa pretium. Phasellus imperdiet sapien a interdum sollicitudin. Duis at commodo lectus, a lacinia sem."}`, string(b))
 	})
 
 	t.Run("string key", func(t *testing.T) {
