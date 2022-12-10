@@ -13,8 +13,6 @@ import (
 func FuzzMarshalling(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		for _, ctor := range []func() any{
-			func() any { return nil },
-			func() any { return new([]any) },
 			func() any { return &OrderedMap[string, string]{} },
 			func() any { return &OrderedMap[string, any]{} },
 			func() any { return new(S) },
@@ -23,25 +21,48 @@ func FuzzMarshalling(f *testing.F) {
 			if json.Unmarshal(data, v) != nil {
 				continue
 			}
+			data1, err := json.Marshal(v)
+			if err != nil {
+				panic(err)
+			}
+
 			if s, ok := v.(*S); ok {
 				if len(s.P) == 0 {
 					s.P = []byte(`""`)
 				}
 			}
-			data1, err := json.Marshal(v)
-			if err != nil {
-				panic(err)
-			}
+
 			v1 := ctor()
 			if json.Unmarshal(data1, v1) != nil {
 				continue
 			}
+
 			if s, ok := v.(*S); ok {
 				// Some additional escaping happens with P.
 				s.P = nil
 				v1.(*S).P = nil
 			}
+
 			if !fuzz.DeepEqual(v, v1) {
+				// Skip false positives due to linked list initialization
+				switch v := v.(type) {
+				case *OrderedMap[string, string]:
+					if l := v1.(*OrderedMap[string, string]).Len(); l == 0 && l == v.Len() {
+						continue
+					}
+				case *OrderedMap[string, any]:
+					if l := v1.(*OrderedMap[string, any]).Len(); l == 0 && l == v.Len() {
+						continue
+					}
+				case *S:
+					if l := v1.(*S).H.Len(); l == 0 && l == v.H.Len() {
+						if ll := v1.(*S).I.Len(); ll == 0 && ll == v.I.Len() {
+							continue
+						}
+					}
+				default:
+					panic(fmt.Sprintf("unhandled %T", v))
+				}
 				fmt.Printf("v0: %#v\n", v)
 				fmt.Printf("v1: %#v\n", v1)
 				panic("not equal")
@@ -51,40 +72,7 @@ func FuzzMarshalling(f *testing.F) {
 }
 
 type S struct {
-	A int    `json:",omitempty"`
-	B string `json:"B1,omitempty"`
-	C float64
-	D bool
-	E uint8
-	F []byte
-	G any
-	H OrderedMap[string, any]
-	I OrderedMap[string, string]
-	J []any
-	K []string
-	L S1
-	M *S1
-	N *int
-	O **int
+	H OrderedMap[int, any]
+	I OrderedMap[int, string]
 	P json.RawMessage
-	Q Marshaller
-	R int `json:"-"`
-	S int `json:",string"`
-}
-
-type S1 struct {
-	A int
-	B string
-}
-
-type Marshaller struct {
-	v string
-}
-
-func (m *Marshaller) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.v)
-}
-
-func (m *Marshaller) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &m.v)
 }
