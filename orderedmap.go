@@ -26,9 +26,19 @@ type OrderedMap[K comparable, V any] struct {
 }
 
 // New creates a new OrderedMap.
-func New[K comparable, V any]() *OrderedMap[K, V] {
+// An optional capacity can be given à la make(map[K]V, capacity).
+func New[K comparable, V any](capacity ...int) *OrderedMap[K, V] {
+	var pairs map[K]*Pair[K, V]
+	switch len(capacity) {
+	case 0:
+		pairs = make(map[K]*Pair[K, V])
+	case 1:
+		pairs = make(map[K]*Pair[K, V], capacity[0])
+	default:
+		panic("too many arguments to New[K,V]()")
+	}
 	return &OrderedMap[K, V]{
-		pairs: make(map[K]*Pair[K, V]),
+		pairs: pairs,
 		list:  list.New[*Pair[K, V]](),
 	}
 }

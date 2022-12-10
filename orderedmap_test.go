@@ -260,3 +260,16 @@ func TestMove(t *testing.T) {
 	err = om.MoveToFront(100)
 	assert.NotEqual(t, err, nil)
 }
+
+func TestNewWithCapacity(t *testing.T) {
+	zero := New[int, string](0)
+	assert.Empty(t, zero.Len())
+
+	assert.PanicsWithValue(t, "too many arguments to New[K,V]()", func() {
+		_ = New[int, string](1, 2, 3)
+	})
+
+	om := New[int, string](-1)
+	om.Set(1337, "quarante-deux")
+	assert.Equal(t, 1, om.Len())
+}
