@@ -68,6 +68,9 @@ func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
 		Key:   key,
 		Value: value,
 	}
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
+	}
 	pair.element = om.list.PushBack(pair)
 	om.pairs[key] = pair
 
@@ -83,6 +86,9 @@ func (om *OrderedMap[K, V]) Store(key K, value V) (V, bool) {
 // on that key prior to the call to `Delete`.
 func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
 	if pair, present := om.pairs[key]; present {
+		if om.list == nil {
+			om.list = list.New[*Pair[K, V]]()
+		}
 		om.list.Remove(pair.element)
 		delete(om.pairs, key)
 		return pair.Value, true
@@ -99,6 +105,9 @@ func (om *OrderedMap[K, V]) Len() int {
 // pairs from the oldest to the newest, e.g.:
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
+	}
 	return listElementToPair(om.list.Front())
 }
 
@@ -106,6 +115,9 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 // pairs from the newest to the oldest, e.g.:
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
+	}
 	return listElementToPair(om.list.Back())
 }
 
@@ -143,6 +155,9 @@ func (om *OrderedMap[K, V]) MoveAfter(key, markKey K) error {
 	if err != nil {
 		return err
 	}
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
+	}
 	om.list.MoveAfter(elements[0], elements[1])
 	return nil
 }
@@ -153,6 +168,9 @@ func (om *OrderedMap[K, V]) MoveBefore(key, markKey K) error {
 	elements, err := om.getElements(key, markKey)
 	if err != nil {
 		return err
+	}
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
 	}
 	om.list.MoveBefore(elements[0], elements[1])
 	return nil
@@ -177,6 +195,9 @@ func (om *OrderedMap[K, V]) MoveToBack(key K) error {
 	if !present {
 		return &KeyNotFoundError[K]{key}
 	}
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
+	}
 	om.list.MoveToBack(pair.element)
 	return nil
 }
@@ -187,6 +208,9 @@ func (om *OrderedMap[K, V]) MoveToFront(key K) error {
 	pair, present := om.pairs[key]
 	if !present {
 		return &KeyNotFoundError[K]{key}
+	}
+	if om.list == nil {
+		om.list = list.New[*Pair[K, V]]()
 	}
 	om.list.MoveToFront(pair.element)
 	return nil
