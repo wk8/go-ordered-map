@@ -5,9 +5,8 @@ package orderedmap
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
-
-	"github.com/dvyukov/go-fuzz-corpus/fuzz"
 )
 
 func FuzzMarshalling(f *testing.F) {
@@ -43,7 +42,7 @@ func FuzzMarshalling(f *testing.F) {
 				v1.(*S).P = nil
 			}
 
-			if !fuzz.DeepEqual(v, v1) {
+			if !reflect.DeepEqual(v, v1) {
 				// Skip false positives due to linked list initialization
 				switch v := v.(type) {
 				case *OrderedMap[string, string]:
