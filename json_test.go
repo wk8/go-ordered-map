@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// to test marshalling TextMarshalers and unmarshalling TextUnmarshalers
 type marshallable int
 
 func (m marshallable) MarshalText() ([]byte, error) {
@@ -131,6 +133,94 @@ func TestUnmarshallJSON(t *testing.T) {
 
 		assertLenEqual(t, om, 0)
 	})
+}
+
+// to test structs that have nested map fields
+type nestedMaps struct {
+	X int                                                               `json:"x"`
+	M *OrderedMap[string, []*OrderedMap[int, *OrderedMap[string, any]]] `json:"m"`
+}
+
+func TestJSONRoundTrip(t *testing.T) {
+	for _, testCase := range []struct {
+		name            string
+		input           string
+		targetFactory   func() any
+		isPrettyPrinted bool
+	}{
+		{
+			name: "",
+			input: `{
+    "x": 28,
+    "m": {
+        "foo": [
+            {
+                "12": {
+                    "i": 12,
+                    "b": true,
+                    "n": null,
+                    "m": {
+                        "a": "b",
+                        "c": 28
+                    }
+                },
+                "28": {
+                    "a": false,
+                    "b": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            },
+            {
+                "3": {
+                    "c": null,
+                    "d": 87
+                },
+                "4": {
+                    "e": true
+                },
+                "5": {
+                    "f": 4,
+                    "g": 5,
+                    "h": 6
+                }
+            }
+        ],
+        "bar": [
+            {
+                "5": {
+                    "foo": "bar"
+                }
+            }
+        ]
+    }
+}`,
+			targetFactory:   func() any { return &nestedMaps{} },
+			isPrettyPrinted: true,
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			target := testCase.targetFactory()
+
+			require.NoError(t, json.Unmarshal([]byte(testCase.input), target))
+
+			var (
+				out []byte
+				err error
+			)
+			if testCase.isPrettyPrinted {
+				out, err = json.MarshalIndent(target, "", "    ")
+			} else {
+				out, err = json.Marshal(target)
+			}
+
+			if assert.NoError(t, err) {
+				assert.Equal(t, strings.TrimSpace(testCase.input), string(out))
+			}
+		})
+	}
 }
 
 func BenchmarkMarshalJSON(b *testing.B) {

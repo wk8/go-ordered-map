@@ -39,11 +39,11 @@ func assertOrderedPairsEqualFromOldest[K comparable, V any](
 	t.Helper()
 
 	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), orderedMap.Len()) {
-		i := orderedMap.Len() - 1
-		for pair := orderedMap.Newest(); pair != nil; pair = pair.Prev() {
+		i := 0
+		for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() {
 			assert.Equal(t, expectedKeys[i], pair.Key)
 			assert.Equal(t, expectedValues[i], pair.Value)
-			i--
+			i++
 		}
 	}
 }

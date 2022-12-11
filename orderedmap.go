@@ -25,22 +25,66 @@ type OrderedMap[K comparable, V any] struct {
 	list  *list.List[*Pair[K, V]]
 }
 
+type initConfig[K comparable, V any] struct {
+	capacity    int
+	initialData []Pair[K, V]
+}
+
+type InitOption[K comparable, V any] func(config *initConfig[K, V])
+
+// WithCapacity allows giving a capacity hint for the map, akin to the standard make(map[K]V, capacity).
+func WithCapacity[K comparable, V any](capacity int) InitOption[K, V] {
+	return func(c *initConfig[K, V]) {
+		c.capacity = capacity
+	}
+}
+
+// WithInitialData allows passing in initial data for the map.
+func WithInitialData[K comparable, V any](initialData ...Pair[K, V]) InitOption[K, V] {
+	return func(c *initConfig[K, V]) {
+		c.initialData = initialData
+		if c.capacity < len(initialData) {
+			c.capacity = len(initialData)
+		}
+	}
+}
+
 // New creates a new OrderedMap.
-// An optional capacity can be given à la make(map[K]V, capacity).
-func New[K comparable, V any](capacity ...int) *OrderedMap[K, V] {
-	var pairs map[K]*Pair[K, V]
-	switch len(capacity) {
-	case 0:
-		pairs = make(map[K]*Pair[K, V])
-	case 1:
-		pairs = make(map[K]*Pair[K, V], capacity[0])
-	default:
-		panic("too many arguments to New[K,V]()")
+// options can either be one or several InitOption[K, V], or a single integer,
+// which is then interpreted as a capacity hint, à la make(map[K]V, capacity).
+func New[K comparable, V any](options ...any) *OrderedMap[K, V] { //nolint:varnamelen
+	orderedMap := &OrderedMap[K, V]{}
+
+	var config initConfig[K, V]
+	for _, untypedOption := range options {
+		switch option := untypedOption.(type) {
+		case int:
+			if len(options) != 1 {
+				invalidOption()
+			}
+			config.capacity = option
+
+		case InitOption[K, V]:
+			option(&config)
+
+		default:
+			invalidOption()
+		}
 	}
-	return &OrderedMap[K, V]{
-		pairs: pairs,
-		list:  list.New[*Pair[K, V]](),
-	}
+
+	orderedMap.initialize(config.capacity)
+	orderedMap.AddPairs(config.initialData...)
+
+	return orderedMap
+}
+
+const invalidOptionMessage = `when using orderedmap.New[K,V]() with options, either provide one or several InitOption[K, V]; or a single integer which is then interpreted as a capacity hint, à la make(map[K]V, capacity).` //nolint:lll
+
+func invalidOption() { panic(invalidOptionMessage) }
+
+func (om *OrderedMap[K, V]) initialize(capacity int) {
+	om.pairs = make(map[K]*Pair[K, V], capacity)
+	om.list = list.New[*Pair[K, V]]()
 }
 
 // Get looks for the given key, and returns the value associated with it,
@@ -82,6 +126,14 @@ func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
 	om.pairs[key] = pair
 
 	return
+}
+
+// AddPairs allows setting multiple pairs at a time. It's equivalent to calling
+// Set on each pair sequentially.
+func (om *OrderedMap[K, V]) AddPairs(pairs ...Pair[K, V]) {
+	for _, pair := range pairs {
+		om.Set(pair.Key, pair.Value)
+	}
 }
 
 // Store is an alias for Set, mostly to present an API similar to `sync.Map`'s.

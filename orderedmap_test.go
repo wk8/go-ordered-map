@@ -261,15 +261,75 @@ func TestMove(t *testing.T) {
 	assert.NotEqual(t, err, nil)
 }
 
+func TestAddPairs(t *testing.T) {
+	om := New[int, any]()
+	om.AddPairs(
+		Pair[int, any]{
+			Key:   28,
+			Value: "foo",
+		},
+		Pair[int, any]{
+			Key:   12,
+			Value: "bar",
+		},
+		Pair[int, any]{
+			Key:   28,
+			Value: "baz",
+		},
+	)
+
+	assertOrderedPairsEqual(t, om,
+		[]int{28, 12},
+		[]any{"baz", "bar"})
+}
+
+// sadly, we can't test the "actual" capacity here, see https://github.com/golang/go/issues/52157
 func TestNewWithCapacity(t *testing.T) {
 	zero := New[int, string](0)
 	assert.Empty(t, zero.Len())
 
-	assert.PanicsWithValue(t, "too many arguments to New[K,V]()", func() {
+	assert.PanicsWithValue(t, invalidOptionMessage, func() {
+		_ = New[int, string](1, 2)
+	})
+	assert.PanicsWithValue(t, invalidOptionMessage, func() {
 		_ = New[int, string](1, 2, 3)
 	})
 
 	om := New[int, string](-1)
 	om.Set(1337, "quarante-deux")
 	assert.Equal(t, 1, om.Len())
+}
+
+func TestWithOptions(t *testing.T) {
+	t.Run("wih capacity", func(t *testing.T) {
+		om := New[string, any](WithCapacity[string, any](98))
+		assert.Equal(t, 0, om.Len())
+	})
+
+	t.Run("with initial data", func(t *testing.T) {
+		om := New[string, int](WithInitialData(
+			Pair[string, int]{
+				Key:   "a",
+				Value: 1,
+			},
+			Pair[string, int]{
+				Key:   "b",
+				Value: 2,
+			},
+			Pair[string, int]{
+				Key:   "c",
+				Value: 3,
+			},
+		))
+
+		assertOrderedPairsEqual(t, om,
+			[]string{"a", "b", "c"},
+			[]int{1, 2, 3})
+	})
+
+	t.Run("with an invalid option type", func(t *testing.T) {
+		assert.PanicsWithValue(t, invalidOptionMessage, func() {
+			_ = New[int, string]("foo")
+		})
+	})
 }
