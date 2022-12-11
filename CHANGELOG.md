@@ -1,6 +1,8 @@
 # Changelog
 
-[comment]: # (Changes since last release)
+[comment]: # (Changes since last release go here)
+
+# 2.1.3 - Dec 11th 2022
 
 * Added support for JSON marshalling/unmarshalling of wrapper of primitive types
 
