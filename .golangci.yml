@@ -19,7 +19,6 @@ linters:
     # FIXME: commented out as it crashes with 1.18 for now
     # - errname
     - errorlint
-    - exhaustive
     - exportloopref
     - forbidigo
     - funlen

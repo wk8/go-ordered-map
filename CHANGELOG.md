@@ -1,5 +1,9 @@
 # Changelog
 
+[comment]: # (Changes since last release)
+
+* Added support for JSON marshalling/unmarshalling of wrapper of primitive types
+
 # 2.1.2 - Dec 10th 2022
 * Allowing to pass options to `New`, to give a capacity hint, or initial data
 * Allowing to deserialize nested ordered maps from JSON without having to explicitly instantiate them

@@ -17,7 +17,7 @@ var (
 )
 
 // MarshalJSON implements the json.Marshaler interface.
-func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
+func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
 	writer := jwriter.Writer{}
 	writer.RawByte('{')
 
@@ -56,10 +56,17 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		case uint64:
 			writer.Uint64Str(key)
 		default:
-			keyRefl := reflect.ValueOf(key)
-			if keyRefl.Type().Kind() == reflect.String {
-				writer.String(keyRefl.String())
-			} else {
+
+			// this switch takes care of wrapper types around primitive types, such as
+			// type myType string
+			switch keyValue := reflect.ValueOf(key); keyValue.Type().Kind() {
+			case reflect.String:
+				writer.String(keyValue.String())
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				writer.Int64Str(keyValue.Int())
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				writer.Uint64Str(keyValue.Uint())
+			default:
 				return nil, fmt.Errorf("unsupported key type: %T", key)
 			}
 		}
@@ -123,9 +130,15 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 					keyAlreadyUnmarshalled = true
 				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 				default:
-					if reflect.TypeOf(key).Kind() == reflect.String {
+
+					// this switch takes care of wrapper types around primitive types, such as
+					// type myType string
+					switch reflect.TypeOf(key).Kind() {
+					case reflect.String:
 						keyData = quoteString(keyData)
-					} else {
+					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+						reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					default:
 						return fmt.Errorf("unsupported key type: %T", typedKey)
 					}
 				}
