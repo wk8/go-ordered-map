@@ -76,6 +76,20 @@ func TestMarshalJSON(t *testing.T) {
 		assert.Equal(t, `{"test":"bar","abc":true}`, string(b))
 	})
 
+	t.Run("typed int key", func(t *testing.T) {
+		type myInt uint32
+		om := New[myInt, any]()
+		om.Set(1, "bar")
+		om.Set(7, "baz")
+		om.Set(2, 28)
+		om.Set(3, 100)
+		om.Set(4, "baz")
+
+		b, err := json.Marshal(om)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz"}`, string(b))
+	})
+
 	t.Run("TextMarshaller key", func(t *testing.T) {
 		om := New[marshallable, any]()
 		om.Set(marshallable(1), "bar")
@@ -120,6 +134,7 @@ func TestUnmarshallJSON(t *testing.T) {
 
 	t.Run("typed string key", func(t *testing.T) {
 		data := `{"test":"bar","abc":true}`
+
 		type myString string
 		om := New[myString, any]()
 		require.NoError(t, json.Unmarshal([]byte(data), &om))
@@ -127,6 +142,18 @@ func TestUnmarshallJSON(t *testing.T) {
 		assertOrderedPairsEqual(t, om,
 			[]myString{"test", "abc"},
 			[]any{"bar", true})
+	})
+
+	t.Run("typed int key", func(t *testing.T) {
+		data := `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`
+
+		type myInt uint32
+		om := New[myInt, any]()
+		require.NoError(t, json.Unmarshal([]byte(data), &om))
+
+		assertOrderedPairsEqual(t, om,
+			[]myInt{1, 7, 2, 3, 4, 5, 6, 8},
+			[]any{"bar", "baz", float64(28), float64(100), "baz", "28", "100", "baz"})
 	})
 
 	t.Run("TextUnmarshaler key", func(t *testing.T) {
