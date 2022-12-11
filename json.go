@@ -18,6 +18,10 @@ var (
 
 // MarshalJSON implements the json.Marshaler interface.
 func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
+	if om == nil || om.list == nil {
+		return []byte("null"), nil
+	}
+
 	writer := jwriter.Writer{}
 	writer.RawByte('{')
 
