@@ -99,6 +99,25 @@ func main() {
 }
 ```
 
+Also worth noting that you can provision ordered maps with a capacity hint, as you would do by passing an optional hint to `make(map[K]V, capacity`):
+```go
+om := orderedmap.New[int, *myStruct](28)
+```
+
+You can also pass in some initial data to store in the map:
+```go
+om := orderedmap.New[int, string](orderedmap.WithInitialData[int, string](
+	orderedmap.Pair[int, string]{
+		Key:   12,
+		Value: "foo",
+	},
+	orderedmap.Pair[int, string]{
+		Key:   28,
+		Value: "bar",
+	},
+))
+```
+
 `OrderedMap`s also support JSON serialization/deserialization, and preserves order:
 
 ```go

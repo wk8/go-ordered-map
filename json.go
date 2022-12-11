@@ -84,6 +84,10 @@ func dumpWriter(writer *jwriter.Writer) ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
+	if om.list == nil {
+		om.initialize(0)
+	}
+
 	return jsonparser.ObjectEach(
 		data,
 		func(keyData []byte, valueData []byte, dataType jsonparser.ValueType, offset int) error {
