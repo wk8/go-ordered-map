@@ -65,6 +65,17 @@ func TestMarshalJSON(t *testing.T) {
 		assert.Equal(t, `{"test":"bar","abc":true}`, string(b))
 	})
 
+	t.Run("typed string key", func(t *testing.T) {
+		type myString string
+		om := New[myString, any]()
+		om.Set("test", "bar")
+		om.Set("abc", true)
+
+		b, err := json.Marshal(om)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"test":"bar","abc":true}`, string(b))
+	})
+
 	t.Run("TextMarshaller key", func(t *testing.T) {
 		om := New[marshallable, any]()
 		om.Set(marshallable(1), "bar")
@@ -104,6 +115,17 @@ func TestUnmarshallJSON(t *testing.T) {
 
 		assertOrderedPairsEqual(t, om,
 			[]string{"test", "abc"},
+			[]any{"bar", true})
+	})
+
+	t.Run("typed string key", func(t *testing.T) {
+		data := `{"test":"bar","abc":true}`
+		type myString string
+		om := New[myString, any]()
+		require.NoError(t, json.Unmarshal([]byte(data), &om))
+
+		assertOrderedPairsEqual(t, om,
+			[]myString{"test", "abc"},
 			[]any{"bar", true})
 	})
 

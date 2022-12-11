@@ -5,6 +5,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/buger/jsonparser"
 	"github.com/mailru/easyjson/jwriter"
@@ -55,7 +56,12 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) {
 		case uint64:
 			writer.Uint64Str(key)
 		default:
-			return nil, fmt.Errorf("unsupported key type: %T", key)
+			keyRefl := reflect.ValueOf(key)
+			if keyRefl.Type().Kind() == reflect.String {
+				writer.String(keyRefl.String())
+			} else {
+				return nil, fmt.Errorf("unsupported key type: %T", key)
+			}
 		}
 
 		writer.RawByte(':')
@@ -117,7 +123,11 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 					keyAlreadyUnmarshalled = true
 				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 				default:
-					return fmt.Errorf("unsupported key type: %T", typedKey)
+					if reflect.TypeOf(key).Kind() == reflect.String {
+						keyData = quoteString(keyData)
+					} else {
+						return fmt.Errorf("unsupported key type: %T", typedKey)
+					}
 				}
 
 				if !keyAlreadyUnmarshalled {
