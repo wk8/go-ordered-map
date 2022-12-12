@@ -290,6 +290,11 @@ func TestJSONRoundTrip(t *testing.T) {
 			targetFactory:   func() any { return &nestedMaps{} },
 			isPrettyPrinted: true,
 		},
+		{
+			name:          "with UTF-8 special chars in key",
+			input:         `{"�":0}`,
+			targetFactory: func() any { return &OrderedMap[string, int]{} },
+		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			target := testCase.targetFactory()
