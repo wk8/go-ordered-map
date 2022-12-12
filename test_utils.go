@@ -26,8 +26,8 @@ func assertOrderedPairsEqualFromNewest[K comparable, V any](
 	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), orderedMap.Len()) {
 		i := orderedMap.Len() - 1
 		for pair := orderedMap.Newest(); pair != nil; pair = pair.Prev() {
-			assert.Equal(t, expectedKeys[i], pair.Key)
-			assert.Equal(t, expectedValues[i], pair.Value)
+			assert.Equal(t, expectedKeys[i], pair.Key, "from newest index=%d on key", i)
+			assert.Equal(t, expectedValues[i], pair.Value, "from newest index=%d on value", i)
 			i--
 		}
 	}
@@ -41,8 +41,8 @@ func assertOrderedPairsEqualFromOldest[K comparable, V any](
 	if assert.Equal(t, len(expectedKeys), len(expectedValues)) && assert.Equal(t, len(expectedKeys), orderedMap.Len()) {
 		i := 0
 		for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() {
-			assert.Equal(t, expectedKeys[i], pair.Key)
-			assert.Equal(t, expectedValues[i], pair.Value)
+			assert.Equal(t, expectedKeys[i], pair.Key, "from oldest index=%d on key", i)
+			assert.Equal(t, expectedValues[i], pair.Value, "from oldest index=%d on value", i)
 			i++
 		}
 	}

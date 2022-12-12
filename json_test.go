@@ -184,6 +184,45 @@ func TestUnmarshallJSON(t *testing.T) {
 	})
 }
 
+const specialCharacters = "\\\\/\"\b\f\n\r\t\x00\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
+
+func TestJSONSpecialCharacters(t *testing.T) {
+	baselineMap := map[string]any{specialCharacters: specialCharacters}
+	baselineData, err := json.Marshal(baselineMap)
+	require.NoError(t, err) // baseline proves this key is supported by official json library
+	t.Logf("specialCharacters: %#v as []rune:%v", specialCharacters, []rune(specialCharacters))
+	t.Logf("baseline json data: %s", baselineData)
+
+	t.Run("marshal "+specialCharacters, func(t *testing.T) {
+		om := New[string, any]()
+		om.Set(specialCharacters, specialCharacters)
+		b, err := json.Marshal(om)
+		require.NoError(t, err)
+		require.Equal(t, baselineData, b)
+
+		type myString string
+		om2 := New[myString, myString]()
+		om2.Set(specialCharacters, specialCharacters)
+		b, err = json.Marshal(om2)
+		require.NoError(t, err)
+		require.Equal(t, baselineData, b)
+	})
+	t.Run("unmarshall "+specialCharacters, func(t *testing.T) {
+		om := New[string, any]()
+		require.NoError(t, json.Unmarshal([]byte(baselineData), &om))
+		assertOrderedPairsEqual(t, om,
+			[]string{specialCharacters},
+			[]any{specialCharacters})
+
+		type myString string
+		om2 := New[myString, myString]()
+		require.NoError(t, json.Unmarshal([]byte(baselineData), &om2))
+		assertOrderedPairsEqual(t, om2,
+			[]myString{specialCharacters},
+			[]myString{specialCharacters})
+	})
+}
+
 // to test structs that have nested map fields
 type nestedMaps struct {
 	X int                                                               `json:"x"`

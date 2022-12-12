@@ -116,41 +116,37 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			var key K
 			var value V
 
-			if typedKeyPointer, ok := any(&key).(encoding.TextUnmarshaler); ok {
-				// pointer receiver
-				if err := typedKeyPointer.UnmarshalText(keyData); err != nil {
+			switch tkp := any(&key).(type) {
+			case *string:
+				*tkp = string(keyData)
+			case encoding.TextUnmarshaler:
+				if err := tkp.UnmarshalText(keyData); err != nil {
 					return err
 				}
-			} else {
-				keyAlreadyUnmarshalled := false
-				switch typedKey := any(key).(type) {
-				case string:
-					keyData = quoteString(keyData)
-				case encoding.TextUnmarshaler:
-					// not a pointer receiver
-					if err := typedKey.UnmarshalText(keyData); err != nil {
-						return err
-					}
-					keyAlreadyUnmarshalled = true
-				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-				default:
-
-					// this switch takes care of wrapper types around primitive types, such as
-					// type myType string
-					switch reflect.TypeOf(key).Kind() {
-					case reflect.String:
-						keyData = quoteString(keyData)
-					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-						reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					default:
-						return fmt.Errorf("unsupported key type: %T", typedKey)
-					}
+			case *encoding.TextUnmarshaler:
+				// This is to preserve compatibility with original implementation
+				// that handled none pointer receivers, but I (xiegeo) believes this is unused.
+				if err := (*tkp).UnmarshalText(keyData); err != nil {
+					return err
 				}
-
-				if !keyAlreadyUnmarshalled {
+			case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
+				if err := json.Unmarshal(keyData, tkp); err != nil {
+					return err
+				}
+			default:
+				// this switch takes care of wrapper types around primitive types, such as
+				// type myType string
+				switch reflect.TypeOf(key).Kind() {
+				case reflect.String:
+					convertedkeyData := reflect.ValueOf(keyData).Convert(reflect.TypeOf(key))
+					reflect.ValueOf(&key).Elem().Set(convertedkeyData)
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 					if err := json.Unmarshal(keyData, &key); err != nil {
 						return err
 					}
+				default:
+					return fmt.Errorf("unsupported key type: %T", key)
 				}
 			}
 
@@ -161,12 +157,4 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			om.Set(key, value)
 			return nil
 		})
-}
-
-func quoteString(data []byte) []byte {
-	withQuotes := make([]byte, len(data)+2) //nolint:gomnd
-	copy(withQuotes[1:], data)
-	withQuotes[0] = '"'
-	withQuotes[len(data)+1] = '"'
-	return withQuotes
 }
