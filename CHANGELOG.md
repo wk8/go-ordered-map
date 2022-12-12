@@ -2,6 +2,10 @@
 
 [comment]: # (Changes since last release go here)
 
+# 2.1.4 - Dec 12th 2022
+
+* Fixed a bug with UTF-8 special characters in JSON keys
+
 # 2.1.3 - Dec 11th 2022
 
 * Added support for JSON marshalling/unmarshalling of wrapper of primitive types

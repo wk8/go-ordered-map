@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"unicode/utf8"
 
 	"github.com/buger/jsonparser"
 	"github.com/mailru/easyjson/jwriter"
@@ -116,21 +117,19 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			var key K
 			var value V
 
-			switch tkp := any(&key).(type) {
+			switch typedKey := any(&key).(type) {
 			case *string:
-				*tkp = string(keyData)
-			case encoding.TextUnmarshaler:
-				if err := tkp.UnmarshalText(keyData); err != nil {
+				s, err := decodeUTF8(keyData)
+				if err != nil {
 					return err
 				}
-			case *encoding.TextUnmarshaler:
-				// This is to preserve compatibility with original implementation
-				// that handled none pointer receivers, but I (xiegeo) believes this is unused.
-				if err := (*tkp).UnmarshalText(keyData); err != nil {
+				*typedKey = s
+			case encoding.TextUnmarshaler:
+				if err := typedKey.UnmarshalText(keyData); err != nil {
 					return err
 				}
 			case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
-				if err := json.Unmarshal(keyData, tkp); err != nil {
+				if err := json.Unmarshal(keyData, typedKey); err != nil {
 					return err
 				}
 			default:
@@ -138,8 +137,13 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 				// type myType string
 				switch reflect.TypeOf(key).Kind() {
 				case reflect.String:
-					convertedkeyData := reflect.ValueOf(keyData).Convert(reflect.TypeOf(key))
-					reflect.ValueOf(&key).Elem().Set(convertedkeyData)
+					s, err := decodeUTF8(keyData)
+					if err != nil {
+						return err
+					}
+
+					convertedKeyData := reflect.ValueOf(s).Convert(reflect.TypeOf(key))
+					reflect.ValueOf(&key).Elem().Set(convertedKeyData)
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 					if err := json.Unmarshal(keyData, &key); err != nil {
@@ -157,4 +161,22 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			om.Set(key, value)
 			return nil
 		})
+}
+
+func decodeUTF8(input []byte) (string, error) {
+	remaining, offset := input, 0
+	runes := make([]rune, 0, len(remaining))
+
+	for len(remaining) > 0 {
+		r, size := utf8.DecodeRune(remaining)
+		if r == utf8.RuneError && size <= 1 {
+			return "", fmt.Errorf("not a valid UTF-8 string (at position %d): %s", offset, string(input))
+		}
+
+		runes = append(runes, r)
+		remaining = remaining[size:]
+		offset += size
+	}
+
+	return string(runes), nil
 }

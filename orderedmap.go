@@ -154,6 +154,9 @@ func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
 
 // Len returns the length of the ordered map.
 func (om *OrderedMap[K, V]) Len() int {
+	if om == nil || om.pairs == nil {
+		return 0
+	}
 	return len(om.pairs)
 }
 
@@ -161,6 +164,9 @@ func (om *OrderedMap[K, V]) Len() int {
 // pairs from the oldest to the newest, e.g.:
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
+	if om == nil || om.list == nil {
+		return nil
+	}
 	return listElementToPair(om.list.Front())
 }
 
@@ -168,6 +174,9 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 // pairs from the newest to the oldest, e.g.:
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
+	if om == nil || om.list == nil {
+		return nil
+	}
 	return listElementToPair(om.list.Back())
 }
 

@@ -300,7 +300,7 @@ func TestNewWithCapacity(t *testing.T) {
 	assert.Equal(t, 1, om.Len())
 }
 
-func TestWithOptions(t *testing.T) {
+func TestNewWithOptions(t *testing.T) {
 	t.Run("wih capacity", func(t *testing.T) {
 		om := New[string, any](WithCapacity[string, any](98))
 		assert.Equal(t, 0, om.Len())
@@ -331,5 +331,19 @@ func TestWithOptions(t *testing.T) {
 		assert.PanicsWithValue(t, invalidOptionMessage, func() {
 			_ = New[int, string]("foo")
 		})
+	})
+}
+
+func TestNilMap(t *testing.T) {
+	// we want certain behaviors of a nil ordered map to be the same as they are for standard nil maps
+	var om *OrderedMap[int, any]
+
+	t.Run("len", func(t *testing.T) {
+		assert.Equal(t, 0, om.Len())
+	})
+
+	t.Run("iterating - akin to range", func(t *testing.T) {
+		assert.Nil(t, om.Oldest())
+		assert.Nil(t, om.Newest())
 	})
 }
