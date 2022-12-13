@@ -26,6 +26,7 @@ func TestBasicFeatures(t *testing.T) {
 		value, present := om.Get(i)
 
 		assert.Equal(t, 2*i, value)
+		assert.Equal(t, value, om.Value(i))
 		assert.True(t, present)
 	}
 
@@ -90,11 +91,13 @@ func TestBasicFeatures(t *testing.T) {
 		i = 2 * j
 		value, present := om.Get(i)
 		assert.Equal(t, 4*i, value)
+		assert.Equal(t, value, om.Value(i))
 		assert.True(t, present)
 
 		i = 2*j + 1
 		value, present = om.Get(i)
 		assert.Equal(t, 0, value)
+		assert.Equal(t, value, om.Value(i))
 		assert.False(t, present)
 	}
 
@@ -156,6 +159,7 @@ func TestEmptyMapOperations(t *testing.T) {
 
 	oldValue, present := om.Get("foo")
 	assert.Nil(t, oldValue)
+	assert.Nil(t, om.Value("foo"))
 	assert.False(t, present)
 
 	oldValue, present = om.Delete("bar")
@@ -179,6 +183,7 @@ func TestPackUnpackStructs(t *testing.T) {
 
 	value, present := om.Get("foo")
 	assert.True(t, present)
+	assert.Equal(t, value, om.Value("foo"))
 	if assert.NotNil(t, value) {
 		assert.Equal(t, "foo!", value.value)
 	}
@@ -190,6 +195,7 @@ func TestPackUnpackStructs(t *testing.T) {
 	}
 
 	value, present = om.Get("bar")
+	assert.Equal(t, value, om.Value("bar"))
 	assert.True(t, present)
 	if assert.NotNil(t, value) {
 		assert.Equal(t, "baz!", value.value)

@@ -17,6 +17,7 @@ func Example() {
 	fmt.Println("## Get operations: ##")
 	fmt.Println(om.Get("foo"))
 	fmt.Println(om.Get("i dont exist"))
+	fmt.Println(om.Value("coucou"))
 
 	fmt.Println("## Iterating over pairs from oldest to newest: ##")
 	for pair := om.Oldest(); pair != nil; pair = pair.Next() {
@@ -51,6 +52,7 @@ func Example() {
 	// ## Get operations: ##
 	// bar true
 	//  false
+	// toi
 	// ## Iterating over pairs from oldest to newest: ##
 	// foo => bar
 	// bar => baz
