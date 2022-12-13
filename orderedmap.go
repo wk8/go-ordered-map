@@ -102,6 +102,14 @@ func (om *OrderedMap[K, V]) Load(key K) (V, bool) {
 	return om.Get(key)
 }
 
+// Value returns the value associated with the given key or the zero value.
+func (om *OrderedMap[K, V]) Value(key K) (val V) {
+	if pair, present := om.pairs[key]; present {
+		val = pair.Value
+	}
+	return
+}
+
 // GetPair looks for the given key, and returns the pair associated with it,
 // or nil if not found. The Pair struct can then be used to iterate over the ordered map
 // from that point, either forward or backward.
