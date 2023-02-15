@@ -119,7 +119,6 @@ func (om *OrderedMap[K, V]) GetPair(key K) *Pair[K, V] {
 
 // Set sets the key-value pair, and returns what `Get` would have returned
 // on that key prior to the call to `Set`.
-
 func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
 	if pair, present := om.pairs[key]; present {
 		oldValue := pair.Value
