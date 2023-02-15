@@ -264,7 +264,36 @@ func TestMove(t *testing.T) {
 		[]any{"28", "bar", 28, "100", "baz", "baz", "baz", 100})
 
 	err = om.MoveToFront(100)
-	assert.NotEqual(t, err, nil)
+	assert.Equal(t, &KeyNotFoundError[int]{100}, err)
+}
+
+func TestGetAndMove(t *testing.T) {
+	om := New[int, any]()
+	om.Set(1, "bar")
+	om.Set(2, 28)
+	om.Set(3, 100)
+	om.Set(4, "baz")
+	om.Set(5, "28")
+	om.Set(6, "100")
+	om.Set(7, "baz")
+	om.Set(8, "baz")
+
+	value, err := om.GetAndMoveToBack(3)
+	assert.Nil(t, err)
+	assert.Equal(t, 100, value)
+	assertOrderedPairsEqual(t, om,
+		[]int{1, 2, 4, 5, 6, 7, 8, 3},
+		[]any{"bar", 28, "baz", "28", "100", "baz", "baz", 100})
+
+	value, err = om.GetAndMoveToFront(5)
+	assert.Nil(t, err)
+	assert.Equal(t, "28", value)
+	assertOrderedPairsEqual(t, om,
+		[]int{5, 1, 2, 4, 6, 7, 8, 3},
+		[]any{"28", "bar", 28, "baz", "100", "baz", "baz", 100})
+
+	value, err = om.GetAndMoveToBack(100)
+	assert.Equal(t, &KeyNotFoundError[int]{100}, err)
 }
 
 func TestAddPairs(t *testing.T) {

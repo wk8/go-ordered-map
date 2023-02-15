@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// assertOrderedPairsEqual asserts that the map contains the given keys and values
+// from oldest to newest.
 func assertOrderedPairsEqual[K comparable, V any](
 	t *testing.T, orderedMap *OrderedMap[K, V], expectedKeys []K, expectedValues []V,
 ) {

@@ -119,6 +119,7 @@ func (om *OrderedMap[K, V]) GetPair(key K) *Pair[K, V] {
 
 // Set sets the key-value pair, and returns what `Get` would have returned
 // on that key prior to the call to `Set`.
+
 func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
 	if pair, present := om.pairs[key]; present {
 		oldValue := pair.Value
@@ -216,7 +217,8 @@ func (e *KeyNotFoundError[K]) Error() string {
 }
 
 // MoveAfter moves the value associated with key to its new position after the one associated with markKey.
-// Returns an error iff key or markKey are not present in the map.
+// Returns an error iff key or markKey are not present in the map. If an error is returned,
+// it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveAfter(key, markKey K) error {
 	elements, err := om.getElements(key, markKey)
 	if err != nil {
@@ -227,7 +229,8 @@ func (om *OrderedMap[K, V]) MoveAfter(key, markKey K) error {
 }
 
 // MoveBefore moves the value associated with key to its new position before the one associated with markKey.
-// Returns an error iff key or markKey are not present in the map.
+// Returns an error iff key or markKey are not present in the map. If an error is returned,
+// it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveBefore(key, markKey K) error {
 	elements, err := om.getElements(key, markKey)
 	if err != nil {
@@ -249,24 +252,46 @@ func (om *OrderedMap[K, V]) getElements(keys ...K) ([]*list.Element[*Pair[K, V]]
 	return elements, nil
 }
 
-// MoveToBack moves the value associated with key to the back of the ordered map.
-// Returns an error iff key is not present in the map.
+// MoveToBack moves the value associated with key to the back of the ordered map,
+// i.e. makes it the newest pair in the map.
+// Returns an error iff key is not present in the map. If an error is returned,
+// it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveToBack(key K) error {
-	pair, present := om.pairs[key]
-	if !present {
-		return &KeyNotFoundError[K]{key}
-	}
-	om.list.MoveToBack(pair.element)
-	return nil
+	_, err := om.GetAndMoveToBack(key)
+	return err
 }
 
-// MoveToFront moves the value associated with key to the front of the ordered map.
-// Returns an error iff key is not present in the map.
+// MoveToFront moves the value associated with key to the front of the ordered map,
+// i.e. makes it the oldest pair in the map.
+// Returns an error iff key is not present in the map. If an error is returned,
+// it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveToFront(key K) error {
-	pair, present := om.pairs[key]
-	if !present {
-		return &KeyNotFoundError[K]{key}
+	_, err := om.GetAndMoveToFront(key)
+	return err
+}
+
+// GetAndMoveToBack combines Get and MoveToBack in the same call. If an error is returned,
+// it will be a KeyNotFoundError.
+func (om *OrderedMap[K, V]) GetAndMoveToBack(key K) (val V, err error) {
+	if pair, present := om.pairs[key]; present {
+		val = pair.Value
+		om.list.MoveToBack(pair.element)
+	} else {
+		err = &KeyNotFoundError[K]{key}
 	}
-	om.list.MoveToFront(pair.element)
-	return nil
+
+	return
+}
+
+// GetAndMoveToFront combines Get and MoveToFront in the same call. If an error is returned,
+// it will be a KeyNotFoundError.
+func (om *OrderedMap[K, V]) GetAndMoveToFront(key K) (val V, err error) {
+	if pair, present := om.pairs[key]; present {
+		val = pair.Value
+		om.list.MoveToFront(pair.element)
+	} else {
+		err = &KeyNotFoundError[K]{key}
+	}
+
+	return
 }

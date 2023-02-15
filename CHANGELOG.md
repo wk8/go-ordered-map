@@ -2,6 +2,10 @@
 
 [comment]: # (Changes since last release go here)
 
+## 2.1.6 - Feb 15th 2023
+
+* Added `GetAndMoveToBack()` and `GetAndMoveToFront()` methods
+
 ## 2.1.5 - Dec 13th 2022
 
 * Added `Value()` method
