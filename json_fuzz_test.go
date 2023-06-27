@@ -4,12 +4,13 @@ package orderedmap
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-func FuzzRoundTrip(f *testing.F) {
+func FuzzRoundTripJSON(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		for _, testCase := range []struct {
 			name        string

@@ -2,7 +2,7 @@ package orderedmap
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -12,7 +12,7 @@ var (
 )
 
 // MarshalYAML implements the yaml.Marshaler interface.
-func (om *OrderedMap[K, V]) MarshalYAML() (interface{}, error) { //nolint:funlen
+func (om *OrderedMap[K, V]) MarshalYAML() (interface{}, error) {
 	if om == nil {
 		return []byte("null"), nil
 	}
@@ -26,9 +26,8 @@ func (om *OrderedMap[K, V]) MarshalYAML() (interface{}, error) { //nolint:funlen
 
 		keyNode := &yaml.Node{}
 
-		// serialize key to yaml, then unserialize it back into the node
+		// serialize key to yaml, then deserialize it back into the node
 		// this is a hack to get the correct tag for the key
-
 		if err := keyNode.Encode(key); err != nil {
 			return nil, err
 		}
@@ -46,23 +45,22 @@ func (om *OrderedMap[K, V]) MarshalYAML() (interface{}, error) { //nolint:funlen
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
 func (om *OrderedMap[K, V]) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind != yaml.MappingNode {
+		return fmt.Errorf("pipeline must contain YAML mapping, has %v", value.Kind)
+	}
+
 	if om.list == nil {
 		om.initialize(0)
 	}
 
-	log.Info().Msgf("UnmarshalYAML: %v", value)
-
-	if value.Kind != yaml.MappingNode {
-		return fmt.Errorf("pipeline must contain YAML mapping, has %v", value.Kind)
-	}
-	for i := 0; i < len(value.Content); i += 2 {
+	for index := 0; index < len(value.Content); index += 2 {
 		var key K
 		var val V
 
-		if err := value.Content[i].Decode(&key); err != nil {
+		if err := value.Content[index].Decode(&key); err != nil {
 			return err
 		}
-		if err := value.Content[i+1].Decode(&val); err != nil {
+		if err := value.Content[index+1].Decode(&val); err != nil {
 			return err
 		}
 

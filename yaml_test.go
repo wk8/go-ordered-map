@@ -250,7 +250,7 @@ func TestYAMLRoundTrip(t *testing.T) {
 	}{
 		{
 			name:  "empty map",
-			input: `{}`,
+			input: "{}\n",
 			targetFactory: func() any {
 				return &OrderedMap[string, any]{}
 			},
