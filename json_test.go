@@ -184,7 +184,7 @@ func TestUnmarshallJSON(t *testing.T) {
 	})
 }
 
-//const specialCharacters = "\\\\/\"\b\f\n\r\t\x00\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
+// const specialCharacters = "\\\\/\"\b\f\n\r\t\x00\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
 const specialCharacters = "\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
 
 func TestJSONSpecialCharacters(t *testing.T) {
@@ -227,8 +227,8 @@ func TestJSONSpecialCharacters(t *testing.T) {
 
 // to test structs that have nested map fields
 type nestedMaps struct {
-	X int                                                               `json:"x"`
-	M *OrderedMap[string, []*OrderedMap[int, *OrderedMap[string, any]]] `json:"m"`
+	X int                                                               `json:"x" yaml:"x"`
+	M *OrderedMap[string, []*OrderedMap[int, *OrderedMap[string, any]]] `json:"m" yaml:"m"`
 }
 
 func TestJSONRoundTrip(t *testing.T) {
