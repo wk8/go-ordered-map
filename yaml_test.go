@@ -94,8 +94,16 @@ abc: true
 `, string(b))
 	})
 
-	t.Run("empty map", func(t *testing.T) {
+	t.Run("empty map with 0 elements", func(t *testing.T) {
 		om := New[string, any]()
+
+		b, err := yaml.Marshal(om)
+		assert.NoError(t, err)
+		assert.Equal(t, "{}\n", string(b))
+	})
+
+	t.Run("empty map with no elements (null)", func(t *testing.T) {
+		om := &OrderedMap[string, string]{}
 
 		b, err := yaml.Marshal(om)
 		assert.NoError(t, err)
@@ -240,6 +248,13 @@ func TestYAMLRoundTrip(t *testing.T) {
 		input         string
 		targetFactory func() any
 	}{
+		{
+			name:  "empty map",
+			input: `{}`,
+			targetFactory: func() any {
+				return &OrderedMap[string, any]{}
+			},
+		},
 		{
 			name: "",
 			input: `x: 28

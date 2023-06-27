@@ -2,6 +2,7 @@ package orderedmap
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -12,7 +13,7 @@ var (
 
 // MarshalYAML implements the yaml.Marshaler interface.
 func (om *OrderedMap[K, V]) MarshalYAML() (interface{}, error) { //nolint:funlen
-	if om == nil || om.list == nil {
+	if om == nil {
 		return []byte("null"), nil
 	}
 
@@ -48,6 +49,8 @@ func (om *OrderedMap[K, V]) UnmarshalYAML(value *yaml.Node) error {
 	if om.list == nil {
 		om.initialize(0)
 	}
+
+	log.Info().Msgf("UnmarshalYAML: %v", value)
 
 	if value.Kind != yaml.MappingNode {
 		return fmt.Errorf("pipeline must contain YAML mapping, has %v", value.Kind)
