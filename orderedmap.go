@@ -360,3 +360,14 @@ func (om *OrderedMap[K, V]) ValuesFromNewest() iter.Seq[V] {
 		}
 	}
 }
+
+// From creates a new OrderedMap from an iterator over key-value pairs.
+func From[K comparable, V any](i iter.Seq2[K, V]) *OrderedMap[K, V] {
+	om := New[K, V]()
+
+	for k, v := range i {
+		om.Set(k, v)
+	}
+
+	return om
+}

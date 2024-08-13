@@ -178,6 +178,26 @@ for k := range om.KeysNewest() {
 // 1
 ```
 
+`From` is a convenience function that creates a new `OrderedMap` from an iterator over key-value pairs.
+
+```go
+om := orderedmap.New[int, string]()
+om.Set(1, "foo")
+om.Set(2, "bar")
+om.Set(3, "baz")
+
+om2 := orderedmap.From(om.FromOldest())
+
+for k, v := range om2.FromOldest() {
+	fmt.Printf("%d => %s\n", k, v)
+}
+
+// prints:
+// 1 => foo
+// 2 => bar
+// 3 => baz
+```
+
 ## Alternatives
 
 There are several other ordered map golang implementations out there, but I believe that at the time of writing none of them offer the same functionality as this library; more specifically:

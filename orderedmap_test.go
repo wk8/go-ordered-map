@@ -452,3 +452,47 @@ func TestIterators(t *testing.T) {
 
 	assert.Equal(t, expectedValuesFromNewest, values)
 }
+
+func TestIteratorsFrom(t *testing.T) {
+	om := New[int, any]()
+	om.Set(1, "bar")
+	om.Set(2, 28)
+	om.Set(3, 100)
+	om.Set(4, "baz")
+	om.Set(5, "28")
+	om.Set(6, "100")
+	om.Set(7, "baz")
+	om.Set(8, "baz")
+
+	om2 := From(om.FromOldest())
+
+	expectedKeys := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	expectedValues := []any{"bar", 28, 100, "baz", "28", "100", "baz", "baz"}
+
+	var keys []int
+	var values []any
+
+	for k, v := range om2.FromOldest() {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+
+	assert.Equal(t, expectedKeys, keys)
+	assert.Equal(t, expectedValues, values)
+
+	expectedKeysFromNewest := []int{8, 7, 6, 5, 4, 3, 2, 1}
+	expectedValuesFromNewest := []any{"baz", "baz", "100", "28", "baz", 100, 28, "bar"}
+
+	om2 = From(om.FromNewest())
+
+	keys = []int{}
+	values = []any{}
+
+	for k, v := range om2.FromOldest() {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+
+	assert.Equal(t, expectedKeysFromNewest, keys)
+	assert.Equal(t, expectedValuesFromNewest, values)
+}
