@@ -382,3 +382,45 @@ func TestNilMap(t *testing.T) {
 		assert.Nil(t, om.Newest())
 	})
 }
+
+func TestIterators(t *testing.T) {
+	om := New[int, any]()
+	om.Set(1, "bar")
+	om.Set(2, 28)
+	om.Set(3, 100)
+	om.Set(4, "baz")
+	om.Set(5, "28")
+	om.Set(6, "100")
+	om.Set(7, "baz")
+	om.Set(8, "baz")
+
+	expectedKeys := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	expectedValues := []any{"bar", 28, 100, "baz", "28", "100", "baz", "baz"}
+
+	var keys []int
+	var values []any
+
+	for k, v := range om.All() {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+
+	assert.Equal(t, expectedKeys, keys)
+	assert.Equal(t, expectedValues, values)
+
+	keys = []int{}
+
+	for k := range om.Keys() {
+		keys = append(keys, k)
+	}
+
+	assert.Equal(t, expectedKeys, keys)
+
+	values = []any{}
+
+	for v := range om.Values() {
+		values = append(values, v)
+	}
+
+	assert.Equal(t, expectedValues, values)
+}

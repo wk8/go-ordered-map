@@ -1,6 +1,6 @@
 module github.com/wk8/go-ordered-map/v2
 
-go 1.18
+go 1.23
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0

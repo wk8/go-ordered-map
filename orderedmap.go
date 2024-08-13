@@ -4,11 +4,11 @@
 // All operations are constant-time.
 //
 // Github repo: https://github.com/wk8/go-ordered-map
-//
 package orderedmap
 
 import (
 	"fmt"
+	"iter"
 
 	list "github.com/bahlo/generic-list-go"
 )
@@ -293,4 +293,37 @@ func (om *OrderedMap[K, V]) GetAndMoveToFront(key K) (val V, err error) {
 	}
 
 	return
+}
+
+// All returns an iterator over all the key-value pairs in the map.
+func (om *OrderedMap[K, V]) All() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+			if !yield(pair.Key, pair.Value) {
+				return
+			}
+		}
+	}
+}
+
+// Keys returns an iterator over all the keys in the map.
+func (om *OrderedMap[K, V]) Keys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+			if !yield(pair.Key) {
+				return
+			}
+		}
+	}
+}
+
+// Values returns an iterator over all the values in the map.
+func (om *OrderedMap[K, V]) Values() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+			if !yield(pair.Value) {
+				return
+			}
+		}
+	}
 }
