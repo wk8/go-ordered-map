@@ -395,32 +395,60 @@ func TestIterators(t *testing.T) {
 	om.Set(8, "baz")
 
 	expectedKeys := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	expectedKeysFromNewest := []int{8, 7, 6, 5, 4, 3, 2, 1}
 	expectedValues := []any{"bar", 28, 100, "baz", "28", "100", "baz", "baz"}
+	expectedValuesFromNewest := []any{"baz", "baz", "100", "28", "baz", 100, 28, "bar"}
 
 	var keys []int
 	var values []any
 
-	for k, v := range om.All() {
+	for k, v := range om.FromOldest() {
 		keys = append(keys, k)
 		values = append(values, v)
 	}
 
 	assert.Equal(t, expectedKeys, keys)
 	assert.Equal(t, expectedValues, values)
+
+	keys, values = []int{}, []any{}
+
+	for k, v := range om.FromNewest() {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+
+	assert.Equal(t, expectedKeysFromNewest, keys)
+	assert.Equal(t, expectedValuesFromNewest, values)
 
 	keys = []int{}
 
-	for k := range om.Keys() {
+	for k := range om.KeysFromOldest() {
 		keys = append(keys, k)
 	}
 
 	assert.Equal(t, expectedKeys, keys)
 
+	keys = []int{}
+
+	for k := range om.KeysFromNewest() {
+		keys = append(keys, k)
+	}
+
+	assert.Equal(t, expectedKeysFromNewest, keys)
+
 	values = []any{}
 
-	for v := range om.Values() {
+	for v := range om.ValuesFromOldest() {
 		values = append(values, v)
 	}
 
 	assert.Equal(t, expectedValues, values)
+
+	values = []any{}
+
+	for v := range om.ValuesFromNewest() {
+		values = append(values, v)
+	}
+
+	assert.Equal(t, expectedValuesFromNewest, values)
 }
