@@ -4,11 +4,11 @@
 // All operations are constant-time.
 //
 // Github repo: https://github.com/wk8/go-ordered-map
-//
 package orderedmap
 
 import (
 	"fmt"
+	"iter"
 
 	list "github.com/bahlo/generic-list-go"
 )
@@ -180,7 +180,7 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 
 // Newest returns a pointer to the newest pair. It's meant to be used to iterate on the ordered map's
 // pairs from the newest to the oldest, e.g.:
-// for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
+// for pair := orderedMap.Newest(); pair != nil; pair = pair.Prev() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
 	if om == nil || om.list == nil {
 		return nil
@@ -293,4 +293,81 @@ func (om *OrderedMap[K, V]) GetAndMoveToFront(key K) (val V, err error) {
 	}
 
 	return
+}
+
+// FromOldest returns an iterator over all the key-value pairs in the map, starting from the oldest pair.
+func (om *OrderedMap[K, V]) FromOldest() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+			if !yield(pair.Key, pair.Value) {
+				return
+			}
+		}
+	}
+}
+
+// FromNewest returns an iterator over all the key-value pairs in the map, starting from the newest pair.
+func (om *OrderedMap[K, V]) FromNewest() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
+			if !yield(pair.Key, pair.Value) {
+				return
+			}
+		}
+	}
+}
+
+// KeysFromOldest returns an iterator over all the keys in the map, starting from the oldest pair.
+func (om *OrderedMap[K, V]) KeysFromOldest() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+			if !yield(pair.Key) {
+				return
+			}
+		}
+	}
+}
+
+// KeysFromNewest returns an iterator over all the keys in the map, starting from the newest pair.
+func (om *OrderedMap[K, V]) KeysFromNewest() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
+			if !yield(pair.Key) {
+				return
+			}
+		}
+	}
+}
+
+// ValuesFromOldest returns an iterator over all the values in the map, starting from the oldest pair.
+func (om *OrderedMap[K, V]) ValuesFromOldest() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
+			if !yield(pair.Value) {
+				return
+			}
+		}
+	}
+}
+
+// ValuesFromNewest returns an iterator over all the values in the map, starting from the newest pair.
+func (om *OrderedMap[K, V]) ValuesFromNewest() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
+			if !yield(pair.Value) {
+				return
+			}
+		}
+	}
+}
+
+// From creates a new OrderedMap from an iterator over key-value pairs.
+func From[K comparable, V any](i iter.Seq2[K, V]) *OrderedMap[K, V] {
+	om := New[K, V]()
+
+	for k, v := range i {
+		om.Set(k, v)
+	}
+
+	return om
 }

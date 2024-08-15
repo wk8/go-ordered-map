@@ -26,7 +26,9 @@ Or use your favorite golang vendoring tool!
 
 ## Supported go versions
 
-Go >= 1.18 is required to use version >= 2 of this library, as it uses generics.
+Go >= 1.23 is required to use version >= 2.2.0 of this library, as it uses generics and iterators.
+
+if you're running go < 1.23, you can use [version 2.1.8](https://github.com/wk8/go-ordered-map/tree/v2.1.8) instead.
 
 If you're running go < 1.18, you can use [version 1](https://github.com/wk8/go-ordered-map/tree/v1) instead.
 
@@ -143,6 +145,57 @@ data, err := yaml.Marshal(om)
 om := orderedmap.New[string, string]() // or orderedmap.New[int, any](), or any type you expect
 err := yaml.Unmarshal(data, &om)
 ...
+```
+
+## Iterator support (go >= 1.23)
+
+The `FromOldest`, `FromNewest`, `KeysFromOldest`, `KeysFromNewest`, `ValuesFromOldest` and `ValuesFromNewest` methods return iterators over the map's pairs, starting from the oldest or newest pair, respectively.
+
+For example:
+
+```go
+om := orderedmap.New[int, string]()
+om.Set(1, "foo")
+om.Set(2, "bar")
+om.Set(3, "baz")
+
+for k, v := range om.FromOldest() {
+	fmt.Printf("%d => %s\n", k, v)
+}
+
+// prints:
+// 1 => foo
+// 2 => bar
+// 3 => baz
+
+for k := range om.KeysNewest() {
+	fmt.Printf("%d\n", k)
+}
+
+// prints:
+// 3
+// 2
+// 1
+```
+
+`From` is a convenience function that creates a new `OrderedMap` from an iterator over key-value pairs.
+
+```go
+om := orderedmap.New[int, string]()
+om.Set(1, "foo")
+om.Set(2, "bar")
+om.Set(3, "baz")
+
+om2 := orderedmap.From(om.FromOldest())
+
+for k, v := range om2.FromOldest() {
+	fmt.Printf("%d => %s\n", k, v)
+}
+
+// prints:
+// 1 => foo
+// 2 => bar
+// 3 => baz
 ```
 
 ## Alternatives
