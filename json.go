@@ -78,7 +78,7 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
 
 		writer.RawByte(':')
 		// the error is checked at the end of the function
-		writer.Raw(json.Marshal(pair.Value)) //nolint:errchkjson
+		writer.Raw(json.Marshal(pair.Value))
 	}
 
 	writer.RawByte('}')
