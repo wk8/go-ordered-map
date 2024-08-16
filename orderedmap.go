@@ -52,7 +52,7 @@ func WithInitialData[K comparable, V any](initialData ...Pair[K, V]) InitOption[
 // New creates a new OrderedMap.
 // options can either be one or several InitOption[K, V], or a single integer,
 // which is then interpreted as a capacity hint, à la make(map[K]V, capacity).
-func New[K comparable, V any](options ...any) *OrderedMap[K, V] { //nolint:varnamelen
+func New[K comparable, V any](options ...any) *OrderedMap[K, V] {
 	orderedMap := &OrderedMap[K, V]{}
 
 	var config initConfig[K, V]
@@ -363,11 +363,11 @@ func (om *OrderedMap[K, V]) ValuesFromNewest() iter.Seq[V] {
 
 // From creates a new OrderedMap from an iterator over key-value pairs.
 func From[K comparable, V any](i iter.Seq2[K, V]) *OrderedMap[K, V] {
-	om := New[K, V]()
+	oMap := New[K, V]()
 
 	for k, v := range i {
-		om.Set(k, v)
+		oMap.Set(k, v)
 	}
 
-	return om
+	return oMap
 }
