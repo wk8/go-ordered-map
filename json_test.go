@@ -107,6 +107,26 @@ func TestMarshalJSON(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, `{}`, string(b))
 	})
+
+	t.Run("HTML escaping enabled (default)", func(t *testing.T) {
+		om := New[marshallable, any]()
+		om.Set(marshallable(1), "hello <strong>this is bold</strong>")
+		om.Set(marshallable(28), "<?xml version=\"1.0\"?><catalog><book>some book</book></catalog>")
+
+		b, err := jsonMarshal(om, false)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"#1#":"hello \u003cstrong\u003ethis is bold\u003c/strong\u003e","#28#":"\u003c?xml version=\"1.0\"?\u003e\u003ccatalog\u003e\u003cbook\u003esome book\u003c/book\u003e\u003c/catalog\u003e"}`, string(b))
+	})
+
+	t.Run("HTML escaping disabled", func(t *testing.T) {
+		om := New[marshallable, any](WithDisableHTMLEscape[marshallable, any]())
+		om.Set(marshallable(1), "hello <strong>this is bold</strong>")
+		om.Set(marshallable(28), "<?xml version=\"1.0\"?><catalog><book>some book</book></catalog>")
+
+		b, err := jsonMarshal(om, true /* we need to disable HTML escaping here also */)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"#1#":"hello <strong>this is bold</strong>","#28#":"<?xml version=\"1.0\"?><catalog><book>some book</book></catalog>"}`, string(b))
+	})
 }
 
 func TestUnmarshallJSON(t *testing.T) {

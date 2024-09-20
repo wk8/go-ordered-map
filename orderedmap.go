@@ -21,13 +21,15 @@ type Pair[K comparable, V any] struct {
 }
 
 type OrderedMap[K comparable, V any] struct {
-	pairs map[K]*Pair[K, V]
-	list  *list.List[*Pair[K, V]]
+	pairs             map[K]*Pair[K, V]
+	list              *list.List[*Pair[K, V]]
+	disableHTMLEscape bool
 }
 
 type initConfig[K comparable, V any] struct {
-	capacity    int
-	initialData []Pair[K, V]
+	capacity          int
+	initialData       []Pair[K, V]
+	disableHTMLEscape bool
 }
 
 type InitOption[K comparable, V any] func(config *initConfig[K, V])
@@ -49,6 +51,13 @@ func WithInitialData[K comparable, V any](initialData ...Pair[K, V]) InitOption[
 	}
 }
 
+// WithDisableHTMLEscape disables HTMl escaping when marshalling to JSON
+func WithDisableHTMLEscape[K comparable, V any]() InitOption[K, V] {
+	return func(c *initConfig[K, V]) {
+		c.disableHTMLEscape = true
+	}
+}
+
 // New creates a new OrderedMap.
 // options can either be one or several InitOption[K, V], or a single integer,
 // which is then interpreted as a capacity hint, à la make(map[K]V, capacity).
@@ -63,6 +72,11 @@ func New[K comparable, V any](options ...any) *OrderedMap[K, V] {
 				invalidOption()
 			}
 			config.capacity = option
+		case bool:
+			if len(options) != 1 {
+				invalidOption()
+			}
+			config.disableHTMLEscape = option
 
 		case InitOption[K, V]:
 			option(&config)
@@ -72,7 +86,7 @@ func New[K comparable, V any](options ...any) *OrderedMap[K, V] {
 		}
 	}
 
-	orderedMap.initialize(config.capacity)
+	orderedMap.initialize(config.capacity, config.disableHTMLEscape)
 	orderedMap.AddPairs(config.initialData...)
 
 	return orderedMap
@@ -82,9 +96,10 @@ const invalidOptionMessage = `when using orderedmap.New[K,V]() with options, eit
 
 func invalidOption() { panic(invalidOptionMessage) }
 
-func (om *OrderedMap[K, V]) initialize(capacity int) {
+func (om *OrderedMap[K, V]) initialize(capacity int, disableHTMLEscape bool) {
 	om.pairs = make(map[K]*Pair[K, V], capacity)
 	om.list = list.New[*Pair[K, V]]()
+	om.disableHTMLEscape = disableHTMLEscape
 }
 
 // Get looks for the given key, and returns the value associated with it,
