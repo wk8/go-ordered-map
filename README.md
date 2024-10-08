@@ -39,6 +39,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/wk8/go-ordered-map/v2"
 )
@@ -72,6 +73,16 @@ func main() {
 	} // prints:
 	// coucou => toi
 	// bar => baz
+	
+	// removing all pairs which do not have an "o" in their key
+	om.Filter(func(key, value string) bool { return strings.Contains(key, "o") })
+	
+	// new iteration syntax
+	for key, value := range om.FromOldest() {
+		fmt.Printf("%s => %s\n", key, value)
+	}// prints:
+	// foo => bar
+	// coucou => toi
 }
 ```
 

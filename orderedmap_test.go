@@ -496,3 +496,21 @@ func TestIteratorsFrom(t *testing.T) {
 	assert.Equal(t, expectedKeysFromNewest, keys)
 	assert.Equal(t, expectedValuesFromNewest, values)
 }
+
+func TestFilter(t *testing.T) {
+	om := New[int, int]()
+	
+	n := 10 * 3 // ensure divisibility by 3 for the length check below
+	for i := range n {
+		om.Set(i, i*i)
+	}
+	
+	om.Filter(func(k, v int) bool {
+		return k % 3 == 0
+	})
+	
+	assert.Equal(t, n / 3, om.Len())
+	for k := range om.FromOldest() {
+		assert.True(t, k%3==0)
+	}
+}
