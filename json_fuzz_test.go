@@ -101,11 +101,11 @@ type testFuzzStruct struct {
 }
 
 func assertTestFuzzStructEqual(t *testing.T, v1, v2 any) bool {
-	s1, ok := v1.(*testFuzzStruct)
-	s2, ok := v2.(*testFuzzStruct)
+	s1, ok1 := v1.(*testFuzzStruct)
+	s2, ok2 := v2.(*testFuzzStruct)
 
-	if !assert.True(t, ok, "v1 not an testFuzzStruct") ||
-		!assert.True(t, ok, "v2 not an testFuzzStruct") {
+	if !assert.True(t, ok1, "v1 not an testFuzzStruct") ||
+		!assert.True(t, ok2, "v2 not an testFuzzStruct") {
 		return false
 	}
 
