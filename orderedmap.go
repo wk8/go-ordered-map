@@ -9,6 +9,7 @@ package orderedmap
 import (
 	"fmt"
 	"iter"
+	"sync"
 
 	list "github.com/bahlo/generic-list-go"
 )
@@ -21,6 +22,7 @@ type Pair[K comparable, V any] struct {
 }
 
 type OrderedMap[K comparable, V any] struct {
+	rwMux sync.RWMutex
 	pairs map[K]*Pair[K, V]
 	list  *list.List[*Pair[K, V]]
 }
@@ -90,6 +92,9 @@ func (om *OrderedMap[K, V]) initialize(capacity int) {
 // Get looks for the given key, and returns the value associated with it,
 // or V's nil value if not found. The boolean it returns says whether the key is present in the map.
 func (om *OrderedMap[K, V]) Get(key K) (val V, present bool) {
+	om.rwMux.RLock()
+	defer om.rwMux.RUnlock()
+
 	if pair, present := om.pairs[key]; present {
 		return pair.Value, true
 	}
@@ -104,6 +109,9 @@ func (om *OrderedMap[K, V]) Load(key K) (V, bool) {
 
 // Value returns the value associated with the given key or the zero value.
 func (om *OrderedMap[K, V]) Value(key K) (val V) {
+	om.rwMux.RLock()
+	defer om.rwMux.RUnlock()
+
 	if pair, present := om.pairs[key]; present {
 		val = pair.Value
 	}
@@ -114,12 +122,18 @@ func (om *OrderedMap[K, V]) Value(key K) (val V) {
 // or nil if not found. The Pair struct can then be used to iterate over the ordered map
 // from that point, either forward or backward.
 func (om *OrderedMap[K, V]) GetPair(key K) *Pair[K, V] {
+	om.rwMux.RLock()
+	defer om.rwMux.RUnlock()
+
 	return om.pairs[key]
 }
 
 // Set sets the key-value pair, and returns what `Get` would have returned
 // on that key prior to the call to `Set`.
 func (om *OrderedMap[K, V]) Set(key K, value V) (val V, present bool) {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	if pair, present := om.pairs[key]; present {
 		oldValue := pair.Value
 		pair.Value = value
@@ -152,6 +166,9 @@ func (om *OrderedMap[K, V]) Store(key K, value V) (V, bool) {
 // Delete removes the key-value pair, and returns what `Get` would have returned
 // on that key prior to the call to `Delete`.
 func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	if pair, present := om.pairs[key]; present {
 		om.list.Remove(pair.element)
 		delete(om.pairs, key)
@@ -162,6 +179,9 @@ func (om *OrderedMap[K, V]) Delete(key K) (val V, present bool) {
 
 // Len returns the length of the ordered map.
 func (om *OrderedMap[K, V]) Len() int {
+	om.rwMux.RLock()
+	defer om.rwMux.RUnlock()
+
 	if om == nil || om.pairs == nil {
 		return 0
 	}
@@ -172,6 +192,9 @@ func (om *OrderedMap[K, V]) Len() int {
 // pairs from the oldest to the newest, e.g.:
 // for pair := orderedMap.Oldest(); pair != nil; pair = pair.Next() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
+	om.rwMux.RLock()
+	defer om.rwMux.RUnlock()
+
 	if om == nil || om.list == nil {
 		return nil
 	}
@@ -182,6 +205,9 @@ func (om *OrderedMap[K, V]) Oldest() *Pair[K, V] {
 // pairs from the newest to the oldest, e.g.:
 // for pair := orderedMap.Newest(); pair != nil; pair = pair.Prev() { fmt.Printf("%v => %v\n", pair.Key, pair.Value) }
 func (om *OrderedMap[K, V]) Newest() *Pair[K, V] {
+	om.rwMux.RLock()
+	defer om.rwMux.RUnlock()
+
 	if om == nil || om.list == nil {
 		return nil
 	}
@@ -219,6 +245,9 @@ func (e *KeyNotFoundError[K]) Error() string {
 // Returns an error iff key or markKey are not present in the map. If an error is returned,
 // it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveAfter(key, markKey K) error {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	elements, err := om.getElements(key, markKey)
 	if err != nil {
 		return err
@@ -231,6 +260,9 @@ func (om *OrderedMap[K, V]) MoveAfter(key, markKey K) error {
 // Returns an error iff key or markKey are not present in the map. If an error is returned,
 // it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveBefore(key, markKey K) error {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	elements, err := om.getElements(key, markKey)
 	if err != nil {
 		return err
@@ -256,6 +288,9 @@ func (om *OrderedMap[K, V]) getElements(keys ...K) ([]*list.Element[*Pair[K, V]]
 // Returns an error iff key is not present in the map. If an error is returned,
 // it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveToBack(key K) error {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	_, err := om.GetAndMoveToBack(key)
 	return err
 }
@@ -265,6 +300,9 @@ func (om *OrderedMap[K, V]) MoveToBack(key K) error {
 // Returns an error iff key is not present in the map. If an error is returned,
 // it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) MoveToFront(key K) error {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	_, err := om.GetAndMoveToFront(key)
 	return err
 }
@@ -272,6 +310,9 @@ func (om *OrderedMap[K, V]) MoveToFront(key K) error {
 // GetAndMoveToBack combines Get and MoveToBack in the same call. If an error is returned,
 // it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) GetAndMoveToBack(key K) (val V, err error) {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	if pair, present := om.pairs[key]; present {
 		val = pair.Value
 		om.list.MoveToBack(pair.element)
@@ -285,6 +326,9 @@ func (om *OrderedMap[K, V]) GetAndMoveToBack(key K) (val V, err error) {
 // GetAndMoveToFront combines Get and MoveToFront in the same call. If an error is returned,
 // it will be a KeyNotFoundError.
 func (om *OrderedMap[K, V]) GetAndMoveToFront(key K) (val V, err error) {
+	om.rwMux.Lock()
+	defer om.rwMux.Unlock()
+
 	if pair, present := om.pairs[key]; present {
 		val = pair.Value
 		om.list.MoveToFront(pair.element)
@@ -298,6 +342,9 @@ func (om *OrderedMap[K, V]) GetAndMoveToFront(key K) (val V, err error) {
 // FromOldest returns an iterator over all the key-value pairs in the map, starting from the oldest pair.
 func (om *OrderedMap[K, V]) FromOldest() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
+		om.rwMux.RLock()
+		defer om.rwMux.RUnlock()
+
 		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
 			if !yield(pair.Key, pair.Value) {
 				return
@@ -309,6 +356,9 @@ func (om *OrderedMap[K, V]) FromOldest() iter.Seq2[K, V] {
 // FromNewest returns an iterator over all the key-value pairs in the map, starting from the newest pair.
 func (om *OrderedMap[K, V]) FromNewest() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
+		om.rwMux.RLock()
+		defer om.rwMux.RUnlock()
+
 		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
 			if !yield(pair.Key, pair.Value) {
 				return
@@ -320,6 +370,9 @@ func (om *OrderedMap[K, V]) FromNewest() iter.Seq2[K, V] {
 // KeysFromOldest returns an iterator over all the keys in the map, starting from the oldest pair.
 func (om *OrderedMap[K, V]) KeysFromOldest() iter.Seq[K] {
 	return func(yield func(K) bool) {
+		om.rwMux.RLock()
+		defer om.rwMux.RUnlock()
+
 		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
 			if !yield(pair.Key) {
 				return
@@ -331,6 +384,9 @@ func (om *OrderedMap[K, V]) KeysFromOldest() iter.Seq[K] {
 // KeysFromNewest returns an iterator over all the keys in the map, starting from the newest pair.
 func (om *OrderedMap[K, V]) KeysFromNewest() iter.Seq[K] {
 	return func(yield func(K) bool) {
+		om.rwMux.RLock()
+		defer om.rwMux.RUnlock()
+
 		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
 			if !yield(pair.Key) {
 				return
@@ -342,6 +398,9 @@ func (om *OrderedMap[K, V]) KeysFromNewest() iter.Seq[K] {
 // ValuesFromOldest returns an iterator over all the values in the map, starting from the oldest pair.
 func (om *OrderedMap[K, V]) ValuesFromOldest() iter.Seq[V] {
 	return func(yield func(V) bool) {
+		om.rwMux.RLock()
+		defer om.rwMux.RUnlock()
+
 		for pair := om.Oldest(); pair != nil; pair = pair.Next() {
 			if !yield(pair.Value) {
 				return
@@ -353,6 +412,9 @@ func (om *OrderedMap[K, V]) ValuesFromOldest() iter.Seq[V] {
 // ValuesFromNewest returns an iterator over all the values in the map, starting from the newest pair.
 func (om *OrderedMap[K, V]) ValuesFromNewest() iter.Seq[V] {
 	return func(yield func(V) bool) {
+		om.rwMux.RLock()
+		defer om.rwMux.RUnlock()
+
 		for pair := om.Newest(); pair != nil; pair = pair.Prev() {
 			if !yield(pair.Value) {
 				return
