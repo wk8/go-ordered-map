@@ -50,7 +50,7 @@ func (om *OrderedMap[K, V]) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	if om.list == nil {
-		om.initialize(0)
+		om.initialize(0, om.disableHTMLEscape)
 	}
 
 	for index := 0; index < len(value.Content); index += 2 {

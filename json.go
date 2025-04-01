@@ -23,7 +23,9 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
 		return []byte("null"), nil
 	}
 
-	writer := jwriter.Writer{}
+	writer := jwriter.Writer{
+		NoEscapeHTML: om.disableHTMLEscape,
+	}
 	writer.RawByte('{')
 
 	for pair, firstIteration := om.Oldest(), true; pair != nil; pair = pair.Next() {
@@ -78,12 +80,24 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
 
 		writer.RawByte(':')
 		// the error is checked at the end of the function
-		writer.Raw(json.Marshal(pair.Value))
+		writer.Raw(jsonMarshal(pair.Value, om.disableHTMLEscape))
 	}
 
 	writer.RawByte('}')
 
 	return dumpWriter(&writer)
+}
+
+func jsonMarshal(t interface{}, disableHTMLEscape bool) ([]byte, error) {
+	if disableHTMLEscape {
+		buffer := &bytes.Buffer{}
+		encoder := json.NewEncoder(buffer)
+		encoder.SetEscapeHTML(false)
+		err := encoder.Encode(t)
+		// Encode() adds an extra newline, strip it off to guarantee same behavior as json.Marshal
+		return bytes.TrimRight(buffer.Bytes(), "\n"), err
+	}
+	return json.Marshal(t)
 }
 
 func dumpWriter(writer *jwriter.Writer) ([]byte, error) {
@@ -103,7 +117,7 @@ func dumpWriter(writer *jwriter.Writer) ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 	if om.list == nil {
-		om.initialize(0)
+		om.initialize(0, om.disableHTMLEscape)
 	}
 
 	return jsonparser.ObjectEach(
