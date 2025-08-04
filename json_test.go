@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// to test marshalling TextMarshalers and unmarshalling TextUnmarshalers
+// to test marshalling TextMarshalers and unmarshaling TextUnmarshalers
 type marshallable int
 
 func (m marshallable) MarshalText() ([]byte, error) {
@@ -129,7 +129,7 @@ func TestMarshalJSON(t *testing.T) {
 	})
 }
 
-func TestUnmarshallJSON(t *testing.T) {
+func TestUnmarshalJSON(t *testing.T) {
 	t.Run("int key", func(t *testing.T) {
 		data := `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`
 
@@ -229,7 +229,7 @@ func TestJSONSpecialCharacters(t *testing.T) {
 		require.Equal(t, baselineData, b)
 	})
 
-	t.Run("unmarshall special characters", func(t *testing.T) {
+	t.Run("unmarshal special characters", func(t *testing.T) {
 		om := New[string, any]()
 		require.NoError(t, json.Unmarshal(baselineData, &om))
 		assertOrderedPairsEqual(t, om,

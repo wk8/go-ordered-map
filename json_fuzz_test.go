@@ -64,10 +64,10 @@ func FuzzRoundTripJSON(f *testing.F) {
 					require.NoError(t, json.Unmarshal(mapJsonData, &m2))
 
 					t.Logf("initial data = %s", string(data))
-					t.Logf("unmarshalled map = %v", m1)
-					t.Logf("re-marshalled from map = %s", string(mapJsonData))
-					t.Logf("re-marshalled from test obj = %s", string(jsonData))
-					t.Logf("re-unmarshalled map = %s", m2)
+					t.Logf("unmarshaled map = %v", m1)
+					t.Logf("re-marshaled from map = %s", string(mapJsonData))
+					t.Logf("re-marshaled from test obj = %s", string(jsonData))
+					t.Logf("re-unmarshaled map = %s", m2)
 				}
 			})
 		}

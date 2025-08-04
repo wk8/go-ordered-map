@@ -111,7 +111,7 @@ abc: true
 	})
 }
 
-func TestUnmarshallYAML(t *testing.T) {
+func TestUnmarshalYAML(t *testing.T) {
 	t.Run("int key", func(t *testing.T) {
 		data := `
 1: bar
@@ -226,7 +226,7 @@ func TestYAMLSpecialCharacters(t *testing.T) {
 		require.Equal(t, baselineData, b)
 	})
 
-	t.Run("unmarshall special characters", func(t *testing.T) {
+	t.Run("unmarshal special characters", func(t *testing.T) {
 		om := New[string, any]()
 		require.NoError(t, yaml.Unmarshal(baselineData, &om))
 		assertOrderedPairsEqual(t, om,

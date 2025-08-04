@@ -70,10 +70,10 @@ func FuzzRoundTripYAML(f *testing.F) {
 					require.NoError(t, yaml.Unmarshal(mapJsonData, &m2))
 
 					t.Logf("initial data = %s", string(data))
-					t.Logf("unmarshalled map = %v", m1)
+					t.Logf("unmarshaled map = %v", m1)
 					t.Logf("re-marshalled from map = %s", string(mapJsonData))
 					t.Logf("re-marshalled from test obj = %s", string(yamlData))
-					t.Logf("re-unmarshalled map = %s", m2)
+					t.Logf("re-unmarshaled map = %s", m2)
 				}
 			})
 		}
