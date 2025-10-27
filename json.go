@@ -20,7 +20,7 @@ var (
 // MarshalJSON implements the json.Marshaler interface.
 func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
 	if om == nil || om.list == nil {
-		return []byte("null"), nil
+		return JSONNullBytes(), nil
 	}
 
 	writer := jwriter.Writer{
@@ -129,7 +129,6 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			}
 
 			var key K
-			var value V
 
 			switch typedKey := any(&key).(type) {
 			case *string:
@@ -168,6 +167,29 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 				}
 			}
 
+			tValue := reflect.TypeFor[V]()
+			tValueKind := tValue.Kind()
+
+			var value V
+
+			// in the case of an `any`
+			// the value may be nil, we should represent it as such instead of an empty map
+			// otherwise
+			// try to unmarshall into an ordered map before falling back to
+			// what json.Unmarshal would regularly do, which, when the value is a map, it would use map[string]any
+			if tValueKind == reflect.Interface {
+				if bytes.Equal(valueData, JSONNullBytes()) {
+					om.Set(key, value)
+					return nil
+				}
+				om1 := New[string, any]()
+				if err := json.Unmarshal(valueData, &om1); err == nil {
+					om.Set(key, any(om1).(V))
+					return nil
+				}
+			}
+
+			// fallback to json.Unmarshal of V
 			if err := json.Unmarshal(valueData, &value); err != nil {
 				return err
 			}

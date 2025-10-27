@@ -1,7 +1,10 @@
 package orderedmap
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"reflect"
 
 	"gopkg.in/yaml.v3"
 )
@@ -14,7 +17,7 @@ var (
 // MarshalYAML implements the yaml.Marshaler interface.
 func (om *OrderedMap[K, V]) MarshalYAML() (interface{}, error) {
 	if om == nil {
-		return []byte("null"), nil
+		return JSONNullBytes(), nil
 	}
 
 	node := yaml.Node{
@@ -55,11 +58,29 @@ func (om *OrderedMap[K, V]) UnmarshalYAML(value *yaml.Node) error {
 
 	for index := 0; index < len(value.Content); index += 2 {
 		var key K
-		var val V
-
 		if err := value.Content[index].Decode(&key); err != nil {
 			return err
 		}
+
+		tValue := reflect.TypeFor[V]()
+		tValueKind := tValue.Kind()
+		
+		var val V
+
+		if tValueKind == reflect.Interface {
+			valueNode := value.Content[index+1]
+			if bytes.Equal([]byte(valueNode.Value), JSONNullBytes()) {
+				om.Set(key, val)
+				continue
+			}
+
+			om1, err := tryDecodeToOrderedMap(value.Content[index+1].Decode)
+			if err == nil {
+				om.Set(key, om1.(V))
+				continue
+			}
+		}
+
 		if err := value.Content[index+1].Decode(&val); err != nil {
 			return err
 		}
@@ -68,4 +89,28 @@ func (om *OrderedMap[K, V]) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	return nil
+}
+
+// since yaml supports integers and strings as map keys, we need to try both
+func tryDecodeToOrderedMap(decoderFunc func(v any) (err error)) (any, error) {
+	type newFunc func() any
+
+	possibilities := []newFunc{
+		func() any { return New[int, any]() },
+		func() any { return New[int32, any]() },
+		func() any { return New[int64, any]() },
+		func() any { return New[uint, any]() },
+		func() any { return New[uint32, any]() },
+		func() any { return New[uint64, any]() },
+		func() any { return New[string, any]() },
+	}
+
+	for _, possibilityFunc := range possibilities {
+		possibility := possibilityFunc()
+		if err := decoderFunc(possibility); err == nil {
+			return possibility, nil
+		}
+	}
+
+	return nil, errors.New("could not decode to an ordered map")
 }

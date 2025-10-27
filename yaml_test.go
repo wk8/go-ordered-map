@@ -1,10 +1,11 @@
 package orderedmap
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"testing"
 )
 
 func TestMarshalYAML(t *testing.T) {
@@ -202,6 +203,21 @@ func TestUnmarshallYAML(t *testing.T) {
 
 		assertLenEqual(t, om, 0)
 	})
+
+	t.Run("unmarshals nests maps as ordered maps", func(t *testing.T) {
+		data := `{"foo":{"zebra":"z","apple":"a"}}`
+
+		om := New[string, any]()
+		require.NoError(t, yaml.Unmarshal([]byte(data), &om))
+
+		expected := New[string, any]()
+		expected.Set("zebra", "z")
+		expected.Set("apple", "a")
+
+		actual, ok := om.Get("foo")
+		require.True(t, ok)
+		require.Equal(t, expected, actual)
+	})
 }
 
 func TestYAMLSpecialCharacters(t *testing.T) {
@@ -264,6 +280,7 @@ m:
             foo: bar
     foo:
         - 12:
+            z: null
             b: true
             i: 12
             m:
@@ -277,8 +294,8 @@ m:
                 - 2
                 - 3
         - 3:
-            c: null
             d: 87
+            c: null
           4:
             e: true
           5:

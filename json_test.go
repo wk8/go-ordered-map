@@ -202,6 +202,21 @@ func TestUnmarshallJSON(t *testing.T) {
 
 		assertLenEqual(t, om, 0)
 	})
+
+	t.Run("nested maps become ordered", func(t *testing.T) {
+		data := `{"foo":{"zebra":"z","apple":"a"}}`
+
+		om := New[string, any]()
+		require.NoError(t, json.Unmarshal([]byte(data), &om))
+
+		expected := New[string, any]()
+		expected.Set("zebra", "z")
+		expected.Set("apple", "a")
+
+		got, ok := om.Get("foo")
+		require.True(t, ok)
+		assert.Equal(t, expected, got)
+	})
 }
 
 // const specialCharacters = "\\\\/\"\b\f\n\r\t\x00\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
