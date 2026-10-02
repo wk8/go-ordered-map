@@ -36,6 +36,44 @@ func (m *marshallable) UnmarshalText(text []byte) error {
 	return nil
 }
 
+type escapedTextKey struct {
+	text string
+}
+
+func (k escapedTextKey) MarshalText() ([]byte, error) {
+	return []byte(k.text), nil
+}
+
+func (k *escapedTextKey) UnmarshalText(text []byte) error {
+	k.text = string(text)
+	return nil
+}
+
+func TestJSONTextMarshalerKeyEscaping(t *testing.T) {
+	for _, text := range []string{`a"b`, `a\b`, "line\nbreak\t\x00", "<>&" + specialCharacters, ""} {
+		for _, disableHTMLEscape := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%q HTML escape disabled=%t", text, disableHTMLEscape), func(t *testing.T) {
+				key := escapedTextKey{text: text}
+				om := New[escapedTextKey, int]()
+				if disableHTMLEscape {
+					om = New[escapedTextKey, int](WithDisableHTMLEscape[escapedTextKey, int]())
+				}
+				om.Set(key, 42)
+
+				expected, err := jsonMarshal(map[escapedTextKey]int{key: 42}, disableHTMLEscape)
+				require.NoError(t, err)
+				data, err := jsonMarshal(om, disableHTMLEscape)
+				require.NoError(t, err)
+				assert.Equal(t, string(expected), string(data))
+
+				decoded := New[escapedTextKey, int]()
+				require.NoError(t, json.Unmarshal(data, decoded))
+				assertOrderedPairsEqual(t, decoded, []escapedTextKey{key}, []int{42})
+			})
+		}
+	}
+}
+
 func TestMarshalJSON(t *testing.T) {
 	t.Run("int key", func(t *testing.T) {
 		om := New[int, any]()

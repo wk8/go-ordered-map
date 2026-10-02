@@ -39,9 +39,11 @@ func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
 		case string:
 			writer.String(key)
 		case encoding.TextMarshaler:
-			writer.RawByte('"')
-			writer.Raw(key.MarshalText())
-			writer.RawByte('"')
+			text, err := key.MarshalText()
+			if err != nil {
+				return nil, err
+			}
+			writer.String(string(text))
 		case int:
 			writer.IntStr(key)
 		case int8:
