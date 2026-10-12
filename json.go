@@ -17,9 +17,10 @@ var (
 	_ json.Unmarshaler = &OrderedMap[int, any]{}
 )
 
-// MarshalJSON implements the json.Marshaler interface.
-func (om *OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
-	if om == nil || om.list == nil {
+// MarshalJSON implements the json.Marshaler interface. The receiver is the
+// value so encoding/json still calls it after copying the map.
+func (om OrderedMap[K, V]) MarshalJSON() ([]byte, error) { //nolint:funlen
+	if om.list == nil {
 		return []byte("null"), nil
 	}
 
