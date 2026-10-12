@@ -129,6 +129,24 @@ func TestMarshalJSON(t *testing.T) {
 	})
 }
 
+func TestMarshalJSONValueKeepsEntries(t *testing.T) {
+	var om OrderedMap[string, string]
+	require.NoError(t, json.Unmarshal([]byte(`{"key_1":"value_1","key_2":"value_2"}`), &om))
+
+	b, err := json.Marshal(om)
+	require.NoError(t, err)
+	assert.Equal(t, `{"key_1":"value_1","key_2":"value_2"}`, string(b))
+
+	pointer, err := json.Marshal(&om)
+	require.NoError(t, err)
+	assert.Equal(t, `{"key_1":"value_1","key_2":"value_2"}`, string(pointer))
+
+	var absent *OrderedMap[string, string]
+	nullMap, err := json.Marshal(absent)
+	require.NoError(t, err)
+	assert.Equal(t, `null`, string(nullMap))
+}
+
 func TestUnmarshallJSON(t *testing.T) {
 	t.Run("int key", func(t *testing.T) {
 		data := `{"1":"bar","7":"baz","2":28,"3":100,"4":"baz","5":"28","6":"100","8":"baz"}`
