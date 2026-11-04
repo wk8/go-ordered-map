@@ -204,6 +204,228 @@ func TestUnmarshallJSON(t *testing.T) {
 	})
 }
 
+func TestUnmarshalJSONNullRoundTrip(t *testing.T) {
+	var original OrderedMap[string, int]
+	data, err := json.Marshal(&original)
+	require.NoError(t, err)
+	require.Equal(t, "null", string(data))
+
+	var decoded OrderedMap[string, int]
+	require.NoError(t, json.Unmarshal(data, &decoded))
+	assertLenEqual(t, &decoded, 0)
+	assert.Nil(t, decoded.Oldest())
+	assert.Nil(t, decoded.Newest())
+	decoded.Set("new", 1)
+	assertOrderedPairsEqual(t, &decoded, []string{"new"}, []int{1})
+}
+
+func TestUnmarshalJSONNullClears(t *testing.T) {
+	for _, testCase := range []struct {
+		name string
+		make func() *OrderedMap[string, int]
+	}{
+		{"zero", func() *OrderedMap[string, int] { return &OrderedMap[string, int]{} }},
+		{"empty", func() *OrderedMap[string, int] { return New[string, int]() }},
+		{"populated", func() *OrderedMap[string, int] {
+			return New[string, int](WithInitialData(Pair[string, int]{Key: "old", Value: 1}))
+		}},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			for _, data := range []string{"null", " \t\r\nnull\n\r\t "} {
+				om := testCase.make()
+				require.NoError(t, json.Unmarshal([]byte(data), om))
+				assertLenEqual(t, om, 0)
+				assert.Nil(t, om.Oldest())
+				assert.Nil(t, om.Newest())
+				_, present := om.Get("old")
+				assert.False(t, present)
+				om.Set("temporary", 2)
+				require.NoError(t, json.Unmarshal([]byte("null"), om))
+				require.NoError(t, json.Unmarshal([]byte(`{"second":2,"first":1}`), om))
+				assertOrderedPairsEqual(t, om, []string{"second", "first"}, []int{2, 1})
+			}
+		})
+	}
+}
+
+func TestUnmarshalJSONNullPreservesHTMLOption(t *testing.T) {
+	for _, om := range []*OrderedMap[string, string]{
+		{disableHTMLEscape: true},
+		New[string, string](WithDisableHTMLEscape[string, string](),
+			WithInitialData(Pair[string, string]{Key: "old", Value: "value"})),
+	} {
+		require.NoError(t, json.Unmarshal([]byte("null"), om))
+		om.Set("<key>", "<value>&")
+		data, err := jsonMarshal(om, true)
+		require.NoError(t, err)
+		assert.Equal(t, `{"<key>":"<value>&"}`, string(data))
+		require.NoError(t, json.Unmarshal([]byte("null"), om))
+		require.NoError(t, json.Unmarshal([]byte(`{"<new>":"<value>&"}`), om))
+		data, err = jsonMarshal(om, true)
+		require.NoError(t, err)
+		assert.Equal(t, `{"<new>":"<value>&"}`, string(data))
+	}
+}
+
+func TestUnmarshalJSONNullPointer(t *testing.T) {
+	populated := New[string, int](WithInitialData(Pair[string, int]{Key: "old", Value: 1}))
+	for _, om := range []*OrderedMap[string, int]{nil, populated} {
+		require.NoError(t, json.Unmarshal([]byte("null"), &om))
+		assert.Nil(t, om)
+	}
+}
+
+func TestUnmarshalJSONObjectsPreserveOrder(t *testing.T) {
+	var zero OrderedMap[string, int]
+	require.NoError(t, json.Unmarshal([]byte(`{"second":2,"first":1,"second":3}`), &zero))
+	assertOrderedPairsEqual(t, &zero, []string{"second", "first"}, []int{3, 1})
+
+	om := New[string, int]()
+	om.Set("old", 1)
+	om.Set("keep", 2)
+	require.NoError(t, json.Unmarshal([]byte(`{"keep":3,"new":4,"keep":5,"last":6}`), om))
+	assertOrderedPairsEqual(t, om, []string{"old", "keep", "new", "last"}, []int{1, 5, 4, 6})
+	require.NoError(t, json.Unmarshal([]byte(`{}`), om))
+	assertOrderedPairsEqual(t, om, []string{"old", "keep", "new", "last"}, []int{1, 5, 4, 6})
+}
+
+func TestUnmarshalJSONRejectsNonObjects(t *testing.T) {
+	for _, data := range []string{"true", "false", "[]", `["foo"]`, "42", `"foo"`} {
+		t.Run(data, func(t *testing.T) {
+			om := New[string, int](WithInitialData(Pair[string, int]{Key: "old", Value: 1}))
+			require.Error(t, json.Unmarshal([]byte(data), om))
+			assertOrderedPairsEqual(t, om, []string{"old"}, []int{1})
+		})
+	}
+}
+
+func TestUnmarshalJSONRejectsInvalidJSON(t *testing.T) {
+	for _, data := range []string{"", "nul", "Null", "nullx", "null {}", "null null", "null\v", `{"old":2,}`} {
+		t.Run(data, func(t *testing.T) {
+			om := New[string, int](WithInitialData(Pair[string, int]{Key: "old", Value: 1}))
+			err := json.Unmarshal([]byte(data), om)
+			var syntaxError *json.SyntaxError
+			require.ErrorAs(t, err, &syntaxError)
+			assertOrderedPairsEqual(t, om, []string{"old"}, []int{1})
+		})
+	}
+}
+
+func assertJSONIntegerKey[K comparable](t *testing.T, expected K) {
+	t.Helper()
+	t.Run(fmt.Sprintf("%T", expected), func(t *testing.T) {
+		var om OrderedMap[K, string]
+		require.NoError(t, json.Unmarshal([]byte(`{"7":"seven"}`), &om))
+		assertOrderedPairsEqual(t, &om, []K{expected}, []string{"seven"})
+	})
+}
+
+func TestUnmarshalJSONIntegerKeys(t *testing.T) {
+	assertJSONIntegerKey(t, int(7))
+	assertJSONIntegerKey(t, int8(7))
+	assertJSONIntegerKey(t, int16(7))
+	assertJSONIntegerKey(t, int32(7))
+	assertJSONIntegerKey(t, int64(7))
+	assertJSONIntegerKey(t, uint(7))
+	assertJSONIntegerKey(t, uint8(7))
+	assertJSONIntegerKey(t, uint16(7))
+	assertJSONIntegerKey(t, uint32(7))
+	assertJSONIntegerKey(t, uint64(7))
+	type namedInt int16
+	type namedUint uint16
+	assertJSONIntegerKey(t, namedInt(7))
+	assertJSONIntegerKey(t, namedUint(7))
+}
+
+type jsonErrorKey struct{}
+
+func (*jsonErrorKey) UnmarshalText([]byte) error {
+	return strconv.ErrSyntax
+}
+
+func TestUnmarshalJSONKeyErrors(t *testing.T) {
+	t.Run("TextUnmarshaler", func(t *testing.T) {
+		var om OrderedMap[jsonErrorKey, int]
+		err := json.Unmarshal([]byte(`{"key":1}`), &om)
+		require.ErrorIs(t, err, strconv.ErrSyntax)
+		assert.Equal(t, strconv.ErrSyntax.Error(), err.Error())
+	})
+	t.Run("unsupported key", func(t *testing.T) {
+		var om OrderedMap[bool, int]
+		require.EqualError(t, json.Unmarshal([]byte(`{"true":1}`), &om), "unsupported key type: bool")
+	})
+	t.Run("invalid UTF-8", func(t *testing.T) {
+		var om OrderedMap[string, int]
+		require.EqualError(t, json.Unmarshal([]byte("{\"\xff\":1}"), &om), "not a valid UTF-8 string (at position 0): \xff")
+		type namedString string
+		var named OrderedMap[namedString, int]
+		require.EqualError(t, json.Unmarshal([]byte("{\"\xff\":1}"), &named), "not a valid UTF-8 string (at position 0): \xff")
+	})
+	t.Run("integer overflow", func(t *testing.T) {
+		var om OrderedMap[int8, int]
+		err := json.Unmarshal([]byte(`{"128":1}`), &om)
+		var typeError *json.UnmarshalTypeError
+		require.ErrorAs(t, err, &typeError)
+		assert.Equal(t, "number 128", typeError.Value)
+		assert.Equal(t, "int8", typeError.Type.String())
+		require.EqualError(t, err, "json: cannot unmarshal number 128 into Go value of type int8")
+	})
+	t.Run("named integer overflow", func(t *testing.T) {
+		type namedInt int8
+		var om OrderedMap[namedInt, int]
+		err := json.Unmarshal([]byte(`{"128":1}`), &om)
+		var typeError *json.UnmarshalTypeError
+		require.ErrorAs(t, err, &typeError)
+		assert.Equal(t, "number 128", typeError.Value)
+		assert.Equal(t, "orderedmap.namedInt", typeError.Type.String())
+	})
+	t.Run("negative unsigned integer", func(t *testing.T) {
+		var om OrderedMap[uint, int]
+		err := json.Unmarshal([]byte(`{"-1":1}`), &om)
+		var typeError *json.UnmarshalTypeError
+		require.ErrorAs(t, err, &typeError)
+		assert.Equal(t, "number -1", typeError.Value)
+		assert.Equal(t, "uint", typeError.Type.String())
+	})
+	t.Run("invalid integer", func(t *testing.T) {
+		var om OrderedMap[int, int]
+		err := json.Unmarshal([]byte(`{"abc":1}`), &om)
+		var syntaxError *json.SyntaxError
+		require.ErrorAs(t, err, &syntaxError)
+		require.EqualError(t, err, "invalid character 'a' looking for beginning of value")
+	})
+}
+
+func TestUnmarshalJSONNullDoesNotDecodeKeys(t *testing.T) {
+	failing := New[jsonErrorKey, int](WithInitialData(Pair[jsonErrorKey, int]{Key: jsonErrorKey{}, Value: 1}))
+	require.NoError(t, json.Unmarshal([]byte("null"), failing))
+	assertLenEqual(t, failing, 0)
+	failing.Set(jsonErrorKey{}, 2)
+	assertOrderedPairsEqual(t, failing, []jsonErrorKey{{}}, []int{2})
+	unsupported := New[bool, int](WithInitialData(Pair[bool, int]{Key: true, Value: 1}))
+	require.NoError(t, json.Unmarshal([]byte("null"), unsupported))
+	assertLenEqual(t, unsupported, 0)
+	unsupported.Set(false, 2)
+	assertOrderedPairsEqual(t, unsupported, []bool{false}, []int{2})
+}
+
+func TestUnmarshalJSONValueErrorKeepsEarlierUpdates(t *testing.T) {
+	om := New[string, int](WithInitialData(Pair[string, int]{Key: "old", Value: 1}))
+	err := json.Unmarshal([]byte(`{"first":2,"bad":"invalid","last":3}`), om)
+	var typeError *json.UnmarshalTypeError
+	require.ErrorAs(t, err, &typeError)
+	assert.Equal(t, "string", typeError.Value)
+	assert.Equal(t, "int", typeError.Type.String())
+	assertOrderedPairsEqual(t, om, []string{"old", "first"}, []int{1, 2})
+
+	var nested OrderedMap[string, OrderedMap[string, int]]
+	err = json.Unmarshal([]byte(`{"nested":{"bad":"invalid"}}`), &nested)
+	require.ErrorAs(t, err, &typeError)
+	assert.Equal(t, "string", typeError.Value)
+	assert.Equal(t, "int", typeError.Type.String())
+	assertLenEqual(t, &nested, 0)
+}
+
 // const specialCharacters = "\\\\/\"\b\f\n\r\t\x00\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
 const specialCharacters = "\uffff\ufffd世界\u007f\u00ff\U0010FFFF"
 

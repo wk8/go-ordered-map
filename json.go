@@ -116,6 +116,11 @@ func dumpWriter(writer *jwriter.Writer) ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		om.initialize(0, om.disableHTMLEscape)
+		return nil
+	}
+
 	if om.list == nil {
 		om.initialize(0, om.disableHTMLEscape)
 	}
@@ -131,41 +136,8 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			var key K
 			var value V
 
-			switch typedKey := any(&key).(type) {
-			case *string:
-				s, err := decodeUTF8(keyData)
-				if err != nil {
-					return err
-				}
-				*typedKey = s
-			case encoding.TextUnmarshaler:
-				if err := typedKey.UnmarshalText(keyData); err != nil {
-					return err
-				}
-			case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
-				if err := json.Unmarshal(keyData, typedKey); err != nil {
-					return err
-				}
-			default:
-				// this switch takes care of wrapper types around primitive types, such as
-				// type myType string
-				switch reflect.TypeOf(key).Kind() {
-				case reflect.String:
-					s, err := decodeUTF8(keyData)
-					if err != nil {
-						return err
-					}
-
-					convertedKeyData := reflect.ValueOf(s).Convert(reflect.TypeOf(key))
-					reflect.ValueOf(&key).Elem().Set(convertedKeyData)
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					if err := json.Unmarshal(keyData, &key); err != nil {
-						return err
-					}
-				default:
-					return fmt.Errorf("unsupported key type: %T", key)
-				}
+			if err := unmarshalJSONKey(keyData, &key); err != nil {
+				return err
 			}
 
 			if err := json.Unmarshal(valueData, &value); err != nil {
@@ -175,6 +147,41 @@ func (om *OrderedMap[K, V]) UnmarshalJSON(data []byte) error {
 			om.Set(key, value)
 			return nil
 		})
+}
+
+func unmarshalJSONKey[K comparable](keyData []byte, key *K) error {
+	switch typedKey := any(key).(type) {
+	case *string:
+		s, err := decodeUTF8(keyData)
+		if err != nil {
+			return err
+		}
+		*typedKey = s
+	case encoding.TextUnmarshaler:
+		return typedKey.UnmarshalText(keyData)
+	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64:
+		return json.Unmarshal(keyData, typedKey)
+	default:
+		// this switch takes care of wrapper types around primitive types, such as
+		// type myType string
+		switch reflect.TypeOf(*key).Kind() {
+		case reflect.String:
+			s, err := decodeUTF8(keyData)
+			if err != nil {
+				return err
+			}
+
+			convertedKeyData := reflect.ValueOf(s).Convert(reflect.TypeOf(*key))
+			reflect.ValueOf(key).Elem().Set(convertedKeyData)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return json.Unmarshal(keyData, key)
+		default:
+			return fmt.Errorf("unsupported key type: %T", *key)
+		}
+	}
+
+	return nil
 }
 
 func decodeUTF8(input []byte) (string, error) {
