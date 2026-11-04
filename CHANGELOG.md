@@ -2,6 +2,8 @@
 
 [comment]: # (Changes since last release go here)
 
+* Fixed JSON null decoding to clear ordered maps and leave them ready for reuse
+
 ## 2.1.8 - Jun 27th 2023
 
 * Added support for YAML serialization/deserialization
